@@ -4,13 +4,12 @@
 Retrieve information from VOC
 """
 
-import json
-import requests
 import logging
 from datetime import timedelta
+import requests
 try:
     from urlparse import urljoin
-except:
+except ImportError:
     from urllib.parse import urljoin
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,7 +21,9 @@ HEADERS = {"X-Device-Id": "Device",
 
 TIMEOUT = timedelta(seconds=5)
 
+
 class Connection():
+    """Connection to the VOC server."""
 
     def __init__(self, username, password):
         """Initialize."""
@@ -32,7 +33,7 @@ class Connection():
                               password)
         self._state = None
 
-    def _query(self, ref, rel=SERVICE_URL):
+    def query(self, ref, rel=SERVICE_URL):
         """Perform a query to the online service."""
         url = urljoin(rel, ref)
         _LOGGER.debug("Request for %s", url)
@@ -47,33 +48,42 @@ class Connection():
             _LOGGER.info("Updating")
             if not self._state or reset:
                 _LOGGER.info("Querying vehicles")
-                user = self._query("customeraccounts")
+                user = self.query("customeraccounts")
                 self._state = {}
                 for vehicle in user["accountVehicleRelations"]:
-                    rel = self._query(vehicle)
+                    rel = self.query(vehicle)
                     vehicle = rel["vehicle"] + '/'
-                    state = self._query("attributes", vehicle)
+                    state = self.query("attributes", vehicle)
                     self._state.update({vehicle: state})
             _LOGGER.debug("Updating ")
             for vehicle in self._state:
-                status = self._query("status", vehicle)
-                position = self._query("position", vehicle)
+                status = self.query("status", vehicle)
+                position = self.query("position", vehicle)
                 vehicle = self._state[vehicle]
                 vehicle.update(status)
                 vehicle.update(position)
             _LOGGER.debug("State: %s", self._state)
-            return True, self._state
+            return True, self._state.values()
         except requests.exceptions.RequestException as error:
             _LOGGER.error("Could not query server: %s", error)
-            return False, self._state
+            return False, self._state.values()
 
 if __name__ == "__main__":
     from os import path
-    import sys
-    from yaml import safe_load as load_yaml
+    from sys import argv
     logging.basicConfig(level=logging.INFO)
-    with open(path.join(path.dirname(sys.argv[0]),
-                        ".credentials.yaml")) as f:
-        credentials = load_yaml(f)
-        print(Connection(credentials["username"],
-                         credentials["password"]).update())
+
+    def credentials():
+        """Return user, pass."""
+        if len(argv) == 3:
+            return argv[1:]
+        try:
+            from yaml import safe_load as load_yaml
+            with open(path.join(path.dirname(argv[0]),
+                                ".credentials.yaml")) as config:
+                config = load_yaml(config)
+                return config["username"], config["password"]
+        except ImportError:
+            exit(-1)
+
+    print(Connection(*credentials()).update())
