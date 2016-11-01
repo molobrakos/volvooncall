@@ -1,1 +1,5 @@
 .credentials.yaml
+*.egg-info
+MANIFEST
+.tox
+dist
