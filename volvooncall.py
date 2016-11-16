@@ -71,6 +71,7 @@ class Connection():
 if __name__ == "__main__":
     from os import path
     from sys import argv
+    from pprint import pprint
     logging.basicConfig(level=logging.INFO)
 
     def credentials():
@@ -86,4 +87,6 @@ if __name__ == "__main__":
         except ImportError:
             exit(-1)
 
-    print(Connection(*credentials()).update())
+    res, value = Connection(*credentials()).update()
+    if res:
+        pprint(list(value))
