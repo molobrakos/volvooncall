@@ -7,10 +7,7 @@ Retrieve information from VOC
 import logging
 from datetime import timedelta
 import requests
-try:
-    from urlparse import urljoin
-except ImportError:
-    from urllib.parse import urljoin
+from requests.compat import urljoin
 
 _LOGGER = logging.getLogger(__name__)
 
