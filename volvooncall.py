@@ -79,11 +79,10 @@ if __name__ == "__main__":
             from yaml import safe_load as load_yaml
             with open(path.join(path.dirname(argv[0]),
                                 ".credentials.yaml")) as config:
-                config = load_yaml(config)
-                return config["username"], config["password"]
+                return load_yaml(config)
         except ImportError:
             exit(-1)
 
-    res, value = Connection(*credentials()).update()
+    res, value = Connection(**credentials()).update()
     if res:
         pprint(list(value))
