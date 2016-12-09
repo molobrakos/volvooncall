@@ -14,7 +14,9 @@ _LOGGER = logging.getLogger(__name__)
 SERVICE_URL = 'https://vocapi.wirelesscar.net/customerapi/rest/v3.0/'
 HEADERS = {"X-Device-Id": "Device",
            "X-OS-Type": "Android",
-           "X-Originator-Type": "App"}
+           "X-Originator-Type": "App",
+		   "Content-Type": "application/json",
+		   "X-OS-Version": "19"}
 
 TIMEOUT = timedelta(seconds=5)
 
@@ -30,7 +32,7 @@ class Connection():
                               password)
         self._state = None
 
-    def query(self, ref, rel=SERVICE_URL):
+    def getquery(self, ref, rel=SERVICE_URL):
         """Perform a query to the online service."""
         url = urljoin(rel, ref)
         _LOGGER.debug("Request for %s", url)
@@ -39,26 +41,37 @@ class Connection():
         _LOGGER.debug("Received %s", res.json())
         return res.json()
 
+    def postquery(self, ref, rel=SERVICE_URL):
+        """Perform a query to the online service."""
+        url = urljoin(rel, ref)
+        _LOGGER.debug("Post for %s", url)
+        res = self._session.post(url, "{}")
+        res.raise_for_status()
+        _LOGGER.debug("Received %s", res.json())
+        return res.json()
+
     def update(self, reset=False):
         """Update status."""
         try:
-            _LOGGER.info("Updating")
+            _LOGGER.info("Updating1")
             if not self._state or reset:
                 _LOGGER.info("Querying vehicles")
-                user = self.query("customeraccounts")
+                user = self.getquery("customeraccounts")
                 self._state = {}
                 for vehicle in user["accountVehicleRelations"]:
-                    rel = self.query(vehicle)
+                    rel = self.getquery(vehicle)
                     vehicle = rel["vehicle"] + '/'
-                    state = self.query("attributes", vehicle)
+                    state = self.getquery("attributes", vehicle)
                     self._state.update({vehicle: state})
-            _LOGGER.debug("Updating ")
+            _LOGGER.debug("Updating2")
             for vehicle in self._state:
-                status = self.query("status", vehicle)
-                position = self.query("position", vehicle)
+                status = self.getquery("status", vehicle)
+                position = self.getquery("position", vehicle)
+                heater = self.postquery("preclimatization/start", vehicle)
                 vehicle = self._state[vehicle]
                 vehicle.update(status)
                 vehicle.update(position)
+                vehicle.update(heater)
             _LOGGER.debug("State: %s", self._state)
             return True, self._state.values()
         except requests.exceptions.RequestException as error:
@@ -69,7 +82,13 @@ if __name__ == "__main__":
     from os import path
     from sys import argv
     from pprint import pprint
+#    logging.basicConfig(level=logging.CRITICAL)
+#    logging.basicConfig(level=logging.ERROR)
+#    logging.basicConfig(level=logging.WARNING)
     logging.basicConfig(level=logging.INFO)
+#    logging.basicConfig(level=logging.DEBUG)
+#    logging.basicConfig(level=logging.NOTSET)
+
 
     def credentials():
         """Return user, pass."""
@@ -81,6 +100,7 @@ if __name__ == "__main__":
                                 ".credentials.yaml")) as config:
                 return load_yaml(config)
         except ImportError:
+            _LOGGER.error("Incorrect parameters. \nUsage: volvooncall.py <username> <password>")
             exit(-1)
 
     res, value = Connection(**credentials()).update()
