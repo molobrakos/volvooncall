@@ -103,6 +103,6 @@ if __name__ == "__main__":
             _LOGGER.error("Incorrect parameters. \nUsage: volvooncall.py <username> <password>")
             exit(-1)
 
-    res, value = Connection(**credentials()).update()
+    res, value = Connection(*credentials()).update()
     if res:
         pprint(list(value))
