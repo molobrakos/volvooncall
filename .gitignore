@@ -1,4 +1,4 @@
-.credentials.yaml
+.credentials.conf
 *.egg-info
 MANIFEST
 .tox
