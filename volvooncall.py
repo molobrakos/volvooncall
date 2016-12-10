@@ -31,6 +31,7 @@ class Connection():
         self._session.auth = (username,
                               password)
         self._state = {}
+        _LOGGER.debug("User: <%s>", username)
 
     def query(self, ref, rel=SERVICE_URL):
         """Perform a query to the online service."""
@@ -48,6 +49,8 @@ class Connection():
             if not self._state or reset:
                 _LOGGER.info('Querying vehicles')
                 user = self.query('customeraccounts')
+                _LOGGER.debug("Account for <%s> received",
+                              user['username'])
                 self._state = {}
                 for vehicle in user['accountVehicleRelations']:
                     rel = self.query(vehicle)
