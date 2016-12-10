@@ -6,6 +6,7 @@ Retrieve information from VOC
 
 import logging
 from datetime import timedelta
+
 import requests
 from requests.compat import urljoin
 
@@ -79,10 +80,15 @@ def main():
     if len(argv) == 3:
         credentials = argv[1:]
     else:
-        with open(path.join(path.dirname(argv[0]),
-                            '.credentials.conf')) as config:
-            credentials = dict(x.split(": ")
-                               for x in config.read().strip().splitlines())
+        try:
+            with open(path.join(path.dirname(argv[0]),
+                                '.credentials.conf')) as config:
+                credentials = dict(x.split(": ")
+                                   for x in config.read().strip().splitlines())
+        except (IOError, OSError):
+            print("Could not read configuration and no credentials on command line\n"
+                  "Usage: %s <username> <password>" % argv[0])
+            exit(-1)
     connection = Connection(**credentials)
     if connection.update():
         pprint(connection.state)
