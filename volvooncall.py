@@ -64,7 +64,7 @@ class Connection():
                     self.query('position', vin))
                 _LOGGER.debug('State: %s', self._state)
             return True
-        except requests.exceptions.RequestException as error:
+        except (IOError, OSError) as error:
             _LOGGER.error('Could not query server: %s', error)
 
     @property
