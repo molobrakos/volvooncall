@@ -89,7 +89,8 @@ def main():
                 credentials = dict(x.split(": ")
                                    for x in config.read().strip().splitlines())
         except (IOError, OSError):
-            print("Could not read configuration and no credentials on command line\n"
+            print("Could not read configuration "
+                  "and no credentials on command line\n"
                   "Usage: %s <username> <password>" % argv[0])
             exit(-1)
     connection = Connection(**credentials)
