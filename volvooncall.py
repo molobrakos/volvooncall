@@ -5,7 +5,7 @@ Retrieve information from VOC
 """
 
 import logging
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import requests
 from requests.compat import urljoin
@@ -18,6 +18,16 @@ HEADERS = {'X-Device-Id': 'Device',
            'X-Originator-Type': 'App'}
 
 TIMEOUT = timedelta(seconds=5)
+
+
+def datetime_parser(obj):
+    """Parse datetime (only Python3) because of timezone."""
+    for key, val in obj.items():
+        try:
+            obj[key] = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S%z')
+        except (TypeError, ValueError):
+            pass
+    return obj
 
 
 class Connection():
@@ -39,8 +49,9 @@ class Connection():
         _LOGGER.debug('Request for %s', url)
         res = self._session.get(url, timeout=TIMEOUT.seconds)
         res.raise_for_status()
-        _LOGGER.debug('Received %s', res.json())
-        return res.json()
+        res = res.json(object_hook=datetime_parser)
+        _LOGGER.debug('Received %s', res)
+        return res
 
     def update(self, reset=False):
         """Update status."""
@@ -68,16 +79,32 @@ class Connection():
             _LOGGER.error('Could not query server: %s', error)
 
     @property
-    def state(self):
+    def vehicles(self):
         """Return state."""
-        return list(self._state.values())
+        return (Vehicle(vehicle) for vehicle in self._state.values())
+
+
+class Vehicle:
+    """Convenience wrapper around the state returned from the server."""
+    def __init__(self, data):
+        self.__dict__ = data
+
+    def __str__(self):
+        # pylint: disable=no-member
+        return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm)" % (
+            self.registrationNumber,
+            self.vehicleType,
+            self.modelYear,
+            self.VIN,
+            self.odometer / 1000,
+            self.fuelAmountLevel,
+            self.distanceToEmpty)
 
 
 def main():
     """Command line interface."""
     from os import path
     from sys import argv
-    from pprint import pprint
     logging.basicConfig(level=logging.INFO)
 
     if len(argv) == 3:
@@ -95,7 +122,8 @@ def main():
             exit(-1)
     connection = Connection(**credentials)
     if connection.update():
-        pprint(connection.state)
+        for vehicle in connection.vehicles:
+            print(vehicle)
 
 
 if __name__ == '__main__':
