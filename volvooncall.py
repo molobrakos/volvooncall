@@ -91,14 +91,16 @@ class Vehicle:
 
     def __str__(self):
         # pylint: disable=no-member
-        return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm)" % (
+        return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm) (pos %s,%s)" % (
             self.registrationNumber,
             self.vehicleType,
             self.modelYear,
             self.VIN,
             self.odometer / 1000,
             self.fuelAmountLevel,
-            self.distanceToEmpty)
+            self.distanceToEmpty,
+            self.position['latitude'],
+            self.position['longitude'])
 
 
 def main():
