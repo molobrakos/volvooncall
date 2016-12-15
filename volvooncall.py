@@ -91,16 +91,14 @@ class Vehicle:
 
     def __str__(self):
         # pylint: disable=no-member
-        return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm) (pos %s,%s)" % (
+        return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm)" % (
             self.registrationNumber,
             self.vehicleType,
             self.modelYear,
             self.VIN,
             self.odometer / 1000,
             self.fuelAmountLevel,
-            self.distanceToEmpty,
-            self.position['latitude'],
-            self.position['longitude'])
+            self.distanceToEmpty)
 
 
 def main():
@@ -126,6 +124,12 @@ def main():
     if connection.update():
         for vehicle in connection.vehicles:
             print(vehicle)
+            try:
+                print("    position: %.14f,%.14f" %
+                      (vehicle.position['latitude'],
+                       vehicle.position['longitude']))
+            except AttributeError:
+                pass
 
 
 if __name__ == '__main__':
