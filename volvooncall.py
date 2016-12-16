@@ -89,6 +89,10 @@ class Vehicle:
     def __init__(self, data):
         self.__dict__ = data
 
+    @property
+    def is_heater_on(self):
+        return self.heater['status'] != 'off'
+
     def __str__(self):
         # pylint: disable=no-member
         return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm)" % (
