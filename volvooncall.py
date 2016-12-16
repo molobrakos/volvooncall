@@ -86,15 +86,16 @@ class Connection():
 
 class Vehicle:
     """Convenience wrapper around the state returned from the server."""
+    # pylint: disable=no-member
     def __init__(self, data):
         self.__dict__ = data
 
     @property
     def is_heater_on(self):
+        """Return status of heater."""
         return self.heater['status'] != 'off'
 
     def __str__(self):
-        # pylint: disable=no-member
         return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm)" % (
             self.registrationNumber,
             self.vehicleType,
