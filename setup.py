@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 from setuptools import setup
+from volvooncall import __version__
 
 setup(name="volvooncall",
-      version="0.1.1",
+      version=__version__,
       description="Communicate with VOC",
       url="https://github.com/molobrakos/volvooncall",
       license="",
