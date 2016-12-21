@@ -2,13 +2,31 @@
 # -*- coding: utf-8 -*-
 """
 Retrieve information from VOC
+
+Usage:
+  volvooncall.py (-h | --help)
+  volvooncall.py --version
+  volvooncall.py [options]
+  volvooncall.py --vin=<vin>
+  volvooncall.py [(--user <username> --pass <password>)]
+
+Options:
+  -u <username>, --user=<username>  VOC username
+  -p <password>, --pass=<password>  VOC password
+  --vin=<vin>                       VIN or registration number
+                                    [default: first veichle]
+  -h --help                         Show this message
+  -v                                Increase verbosity
+  --version                         Show version
 """
 
 import logging
 from datetime import timedelta, datetime
-
+import docopt
 import requests
 from requests.compat import urljoin
+
+__version__ = '0.1.3'
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,8 +113,12 @@ class Vehicle:
         """Return status of heater."""
         return self.heater['status'] != 'off'
 
+    def turn_heater_on(self):
+        """Turn on heater."""
+        pass
+
     def __str__(self):
-        return "%s (%s/%d) %s %dkm (fuel %d%%:%dkm)" % (
+        return "%s (%s/%d) %s %dkm (fuel %d%% %dkm)" % (
             self.registrationNumber,
             self.vehicleType,
             self.modelYear,
@@ -106,26 +128,34 @@ class Vehicle:
             self.distanceToEmpty)
 
 
-def main():
+def main(argv):
     """Command line interface."""
-    from os import path
-    from sys import argv
-    logging.basicConfig(level=logging.INFO)
 
-    if len(argv) == 3:
-        credentials = argv[1:]
+    args = docopt.docopt(__doc__, argv=argv[1:],
+                         version=__version__)
+
+    logging.basicConfig(level=logging.ERROR)
+    if args['-v']:
+        logging.basicConfig(level=logging.INFO)
+    if args['-v'] == 2:
+        logging.basicConfig(level=logging.DEBUG)
+
+    if args['--user'] and args['--pass']:
+        connection = Connection(args['--user'],
+                                args['--pass'])
     else:
         try:
+            from os import path
             with open(path.join(path.dirname(argv[0]),
                                 '.credentials.conf')) as config:
                 credentials = dict(x.split(": ")
                                    for x in config.read().strip().splitlines())
+                connection = Connection(**credentials)
         except (IOError, OSError):
             print("Could not read configuration "
-                  "and no credentials on command line\n"
-                  "Usage: %s <username> <password>" % argv[0])
-            exit(-1)
-    connection = Connection(**credentials)
+                  "and no credentials on command line\n")
+            raise docopt.DocoptExit()
+
     if connection.update():
         for vehicle in connection.vehicles:
             print(vehicle)
@@ -138,4 +168,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    main(sys.argv)

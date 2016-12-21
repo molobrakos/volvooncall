@@ -1,0 +1,7 @@
+[REPORTS]
+reports=no
+
+[MESSAGES CONTROL]
+disable=
+  locally-disabled,
+
