@@ -1,5 +1,10 @@
 .credentials.conf
 *.egg-info
 MANIFEST
+.cache
 .tox
 dist
+bin
+include
+lib
+pip-selfcheck.json
