@@ -127,7 +127,7 @@ class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
     # pylint: disable=no-member
     def __init__(self, conn, url, data):
-        self.__dict__ = data  # assume no name clashes
+        self.__dict__ = data  # cave: assume no name clashes
         self._connection = conn
         self._url = url
 
