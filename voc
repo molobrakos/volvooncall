@@ -39,8 +39,10 @@ def print_vehicle(vehicle):
     except AttributeError:
 	pass
     print('    locked: %s' % ('yes' if vehicle.is_locked else 'no'))
-    print('    heater: %s' % ('on' if vehicle.is_heater_on else 'off'))
-    print('    preclimatization: %s' % ('on' if vehicle.is_preclimatization_on else 'off'))
+    if vehicle.remoteHeaterSupported:
+        print('    heater: %s' % ('on' if vehicle.is_heater_on else 'off'))
+    if vehicle.preclimatizationSupported:
+        print('    preclimatization: %s' % ('on' if vehicle.is_preclimatization_on else 'off'))
 
 
 def main():
