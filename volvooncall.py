@@ -56,9 +56,9 @@ class Connection(object):
             res.raise_for_status()
             res = res.json(object_hook=_obj_parser)
             _LOGGER.debug('Received %s', res)
-            return res
-        except RequestsException as error:
-            print("Failure when communcating with the server: %s", error)
+        except RequestException as error:
+            _LOGGER.error("Failure when communcating with the server: %s", error)
+        finally:
             return res
 
     def get(self, ref, rel=SERVICE_URL):
@@ -118,7 +118,15 @@ class Vehicle(object):
 
     def _call(self, method):
         """Make remote method call."""
-        return self._connection.post(method, self._url)
+        from time import sleep
+        res = self._connection.post(method, self._url)
+        if 'service' in res and 'status' in res and res['status'] == 'Started':
+            service_url = res['service']
+            res = self._connection.get(service_url)
+            if 'service' in res and 'status' in res and res['status'] == 'MessageDelivered':
+                _LOGGER.info('ok')
+                return True
+
 
     @property
     def is_locked(self):
