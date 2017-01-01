@@ -6,18 +6,15 @@ Retrieve information from VOC
 Usage:
   voc (-h | --help)
   voc --version
-  voc [-v | -vv] [(-u <username> -p <password>)] (--list | --vin <vin>) [options]
+  voc [-v | -vv] [(-u <username> -p <password>)] list
+  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] status
+  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] (lock | unlock)
+  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] heater (start | stop)
 
 Options:
   -u <username>, --user=<username>  VOC username
   -p <password>, --pass=<password>  VOC password
-  -l --list                         List available vehicles
-  --vin=<vin>                       VIN or registration number
-  --heater=(start|stop)             Start or stop heater (default: start)
-  --preclimatization=(start|stop)   Start or stop preclimatization (default: start)
-  --heater_preclimatization=(start|stop)
-                                    Start or stop heater/preclimatization (default: start)
-  --lock=(lock|unlock)              Lock or unlock the car (default: lock)
+  --vin=<vin>                       Specify vehicle number
   -h --help                         Show this message
   -v                                Increase verbosity
   --version                         Show version
@@ -70,29 +67,29 @@ def main(argv):
 	print('Could not connect to the server.')
 	sys.exit(-1)
 
+    if args['list']:
+	for vehicle in connection.vehicles:
+	    print(vehicle)
+            sys.exit(0)
+
     if args['--vin']:
 	vehicle = connection.vehicle(args['--vin'])
-	if not vehicle:
-	    print('Vehicle not found')
-	    sys.exit(-1)
+    else:
+        vehicle = next(connection.vehicles)
 
-	if args['--heater']:
-	    vehicle.set_heater(
-		args['--heater'] == 'start')
-	elif args['--preclimatization']:
-	    vehicle.set_preclimatization(
-		args['--preclimatization'] == 'start')
-	elif args['--heater_preclimatization']:
-            vehicle.set_heater_or_preclimatization(
-		args['--hetaer_or_preclimatization'] == 'start')
-        elif args['--lock']:
-	    vehicle.set_lock(
-		args['--lock'] == 'locked')
-	else:
-	    print_vehicle(vehicle)
-    elif args['--list']:
-	for vehicle in connection.vehicles:
-	    print_vehicle(vehicle)
+    if not vehicle:
+        print('Vehicle not found')
+        sys.exit(-1)
+
+    if args['status']:
+        print_vehicle(vehicle)
+        sys.exit(0)
+    elif args['heater']:
+        vehicle.set_heater_or_preclimatization(args['start'])
+    elif args['lock']:
+        vehicle.set_lock(True)
+    elif args['unlock']:
+        vehicle.set_lock(False)
 
 
 if __name__ == '__main__':
