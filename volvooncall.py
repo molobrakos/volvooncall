@@ -6,7 +6,7 @@ from __future__ import print_function
 import logging
 from datetime import timedelta, datetime
 import sys
-import requests
+from requests import Session, RequestException
 from requests.compat import urljoin
 
 __version__ = '0.1.3'
@@ -39,7 +39,7 @@ class Connection(object):
 
     def __init__(self, username, password):
         """Initialize."""
-        self._session = requests.Session()
+        self._session = Session()
         self._session.headers.update(HEADERS)
         self._session.auth = (username,
                               password)
@@ -48,14 +48,18 @@ class Connection(object):
 
     def _query(self, ref, rel=SERVICE_URL, post=False):
         """Perform a query to the online service."""
-        url = urljoin(rel, ref)
-        _LOGGER.debug('Request for %s', url)
-        method = self._session.post if post else self._session.get
-        res = method(url, timeout=TIMEOUT.seconds)
-        res.raise_for_status()
-        res = res.json(object_hook=_obj_parser)
-        _LOGGER.debug('Received %s', res)
-        return res
+        try:
+            url = urljoin(rel, ref)
+            _LOGGER.debug('Request for %s', url)
+            method = self._session.post if post else self._session.get
+            res = method(url, timeout=TIMEOUT.seconds)
+            res.raise_for_status()
+            res = res.json(object_hook=_obj_parser)
+            _LOGGER.debug('Received %s', res)
+            return res
+        except RequestsException as error:
+            print("Failure when communcating with the server: %s", error)
+            return res
 
     def get(self, ref, rel=SERVICE_URL):
         """Perform a query to the online service."""
@@ -99,7 +103,8 @@ class Connection(object):
     def vehicle(self, vin):
         """Return vehicle for given vin."""
         for vehicle in self.vehicles:
-            if vehicle.vin == vin:
+            if (vehicle.vin.lower() == vin.lower() or
+                vehicle.registrationNumber.lower() == vin.lower()):
                 return vehicle
 
 
@@ -128,7 +133,8 @@ class Vehicle(object):
     @property
     def is_preclimatization_on(self):
         """Return status of heater."""
-        return self.preclimatizationSupported and self.preclimatization['status'] != 'off'
+        return (self.preclimatizationSupported and
+                self.preclimatization['status'] != 'off')
 
     def set_lock(self, state):
         """Lock or unlock."""
@@ -172,7 +178,7 @@ class Vehicle(object):
             self.registrationNumber,
             self.vehicleType,
             self.modelYear,
-            self.VIN)
+            self.vin)
 
 
 def read_credentials():
