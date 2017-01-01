@@ -56,9 +56,10 @@ class Connection(object):
             res.raise_for_status()
             res = res.json(object_hook=_obj_parser)
             _LOGGER.debug('Received %s', res)
+            return res
         except RequestException as error:
-            _LOGGER.error("Failure when communcating with the server: %s", error)
-        finally:
+            _LOGGER.error("Failure when communcating with the server: %s",
+                          error)
             return res
 
     def get(self, ref, rel=SERVICE_URL):
@@ -73,13 +74,13 @@ class Connection(object):
         """Make remote method call."""
         res = self.post(method, rel)
         if ('service' in res and
-            'status' in res and
-            res['status'] == 'Started'):
+                'status' in res and
+                res['status'] == 'Started'):
             service_url = res['service']
             res = self.get(service_url)
-            if ('service' in res and
-                'status' in res and
-                res['status'] == 'MessageDelivered'):
+            if (('service' in res and
+                 'status' in res and
+                 res['status'] == 'MessageDelivered')):
                 _LOGGER.info('ok')
                 return True
 
@@ -117,8 +118,8 @@ class Connection(object):
     def vehicle(self, vin):
         """Return vehicle for given vin."""
         for vehicle in self.vehicles:
-            if (vehicle.vin.lower() == vin.lower() or
-                vehicle.registrationNumber.lower() == vin.lower()):
+            if ((vehicle.vin.lower() == vin.lower() or
+                 vehicle.registrationNumber.lower() == vin.lower())):
                 return vehicle
 
 
@@ -151,19 +152,21 @@ class Vehicle(object):
                 self.preclimatization['status'] != 'off')
 
     def lock(self):
-        """Lock or unlock."""
+        """Lock."""
         if not self.lockSupported:
             _LOGGER.error('Lock not supported')
             return
         self.call('lock')
 
     def unlock(self):
+        """Unlock."""
         if not self.unlockSupported:
             _LOGGER.error('Unlock not supported')
             return
         self.call('unlock')
 
     def set_heater_or_preclimatization(self, state):
+        """Set status of heater."""
         if self.remoteHeaterSupported:
             self.call('heater/start' if state else 'heater/stop')
         elif self.preclimatizationSupported:
