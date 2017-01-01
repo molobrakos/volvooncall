@@ -13,7 +13,6 @@ Options:
   -p <password>, --pass=<password>  VOC password
   -l --list                         List available vehicles
   --vin=<vin>                       VIN or registration number
-				    [default: first veichle]
   --heater=(start|stop)             Start or stop heater (default: start)
   --preclimatization=(start|stop)   Start or stop preclimatization (default: start)
   --lock=(lock|unlock)              Lock or unlock the car (default: lock)
@@ -40,6 +39,10 @@ def print_vehicle(vehicle):
 	       vehicle.position['longitude']))
     except AttributeError:
 	pass
+    print('    locked: %s' % ('yes' if vehicle.is_locked else 'no'))
+    print('    heater: %s' % ('on' if vehicle.is_heater_on else 'off'))
+    print('    preclimatization: %s' % ('on' if vehicle.is_preclimatization_on else 'off'))
+
 
 def main(argv):
     """Command line interface."""
@@ -82,7 +85,6 @@ def main(argv):
 		args['--lock'] == 'locked')
 	else:
 	    print_vehicle(vehicle)
-
     elif args['--list']:
 	for vehicle in connection.vehicles:
 	    print_vehicle(vehicle)

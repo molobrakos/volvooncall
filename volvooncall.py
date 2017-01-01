@@ -123,12 +123,12 @@ class Vehicle(object):
     @property
     def is_heater_on(self):
         """Return status of heater."""
-        return self.heater['status'] != 'off'
+        return self.remoteHeaterSupported and self.heater['status'] != 'off'
 
     @property
     def is_preclimatization_on(self):
         """Return status of heater."""
-        return self.preclimatization['status'] != 'off'
+        return self.preclimatizationSupported and self.preclimatization['status'] != 'off'
 
     def set_lock(self, state):
         """Lock or unlock."""
