@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Communicate with VOC server."""
 
+from __future__ import print_function
 import logging
 from datetime import timedelta, datetime
 import sys
@@ -31,7 +33,7 @@ def _obj_parser(obj):
     return obj
 
 
-class Connection():
+class Connection(object):
 
     """Connection to the VOC server."""
 
@@ -101,7 +103,7 @@ class Connection():
                 return vehicle
 
 
-class Vehicle:
+class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
     # pylint: disable=no-member
     def __init__(self, conn, url, data):
@@ -110,6 +112,7 @@ class Vehicle:
         self._url = url
 
     def _call(self, method):
+        """Make remote method call."""
         return self._connection.post(method, self._url)
 
     @property
@@ -128,6 +131,7 @@ class Vehicle:
         return self.preclimatization['status'] != 'off'
 
     def set_lock(self, state):
+        """Lock or unlock."""
         if state:
             if not self.lockSupported:
                 print('Lock not supported')
@@ -163,6 +167,7 @@ class Vehicle:
 
 
 def read_credentials():
+    """Read credentials from file."""
     try:
         from os import path
         with open(path.join(path.dirname(sys.argv[0]),
@@ -174,6 +179,7 @@ def read_credentials():
 
 
 def main(argv):
+    """Main method."""
     if "-v" in argv:
         logging.basicConfig(level=logging.INFO)
     elif "-vv" in argv:
