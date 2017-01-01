@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+# -*- mode: python; coding: utf-8 -*-
+"""
+Retrieve information from VOC
+
+Usage:
+  voc (-h | --help)
+  voc --version
+  voc [-v | -vv] [(-u <username> -p <password>)] (--list | --vin <vin>) [options]
+
+Options:
+  -u <username>, --user=<username>  VOC username
+  -p <password>, --pass=<password>  VOC password
+  -l --list                         List available vehicles
+  --vin=<vin>                       VIN or registration number
+				    [default: first veichle]
+  --heater=(start|stop)             Start or stop heater (default: start)
+  --preclimatization=(start|stop)   Start or stop preclimatization (default: start)
+  --lock=(lock|unlock)              Lock or unlock the car (default: lock)
+  -h --help                         Show this message
+  -v                                Increase verbosity
+  --version                         Show version
+"""
+
+import sys
+import docopt
+import logging
+
+from volvooncall import __version__, read_credentials, Connection
+
+def print_vehicle(vehicle):
+    print('%s %dkm (fuel %d%% %dkm)' % (
+	vehicle,
+	vehicle.odometer / 1000,
+	vehicle.fuelAmountLevel,
+	vehicle.distanceToEmpty))
+    try:
+	print('    position: %.14f,%.14f' %
+	      (vehicle.position['latitude'],
+	       vehicle.position['longitude']))
+    except AttributeError:
+	pass
+
+def main(argv):
+    """Command line interface."""
+
+    args = docopt.docopt(__doc__, argv=argv[1:],
+			 version=__version__)
+
+    if args['-v'] == 2:
+	logging.basicConfig(level=logging.DEBUG)
+    elif args['-v']:
+	logging.basicConfig(level=logging.INFO)
+    else:
+	logging.basicConfig(level=logging.ERROR)
+
+    if args['--user'] and args['--pass']:
+	connection = Connection(args['--user'],
+				args['--pass'])
+    else:
+	credentials = read_credentials()
+	connection = Connection(**credentials)
+
+    if not connection.update():
+	print('Could not connect to the server.')
+	sys.exit(-1)
+
+    if args['--vin']:
+	vehicle = connection.vehicle(args['--vin'])
+	if not vehicle:
+	    print('Vehicle not found')
+	    sys.exit(-1)
+
+	if args['--heater']:
+	    vehicle.set_heater(
+		args['--heater'] == 'start')
+	elif args['--preclimatization']:
+	    vehicle.set_preclimatization(
+		args['--preclimatization'] == 'start')
+	elif args['--lock']:
+	    vehicle.set_lock(
+		args['--lock'] == 'locked')
+	else:
+	    print_vehicle(vehicle)
+
+    elif args['--list']:
+	for vehicle in connection.vehicles:
+	    print_vehicle(vehicle)
+
+
+if __name__ == '__main__':
+   main(sys.argv)
