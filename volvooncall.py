@@ -5,7 +5,7 @@
 from __future__ import print_function
 import logging
 from datetime import timedelta, datetime
-import sys
+from sys import argv
 from requests import Session, RequestException
 from requests.compat import urljoin
 
@@ -202,7 +202,7 @@ def read_credentials():
     """Read credentials from file."""
     try:
         from os import path
-        with open(path.join(path.dirname(sys.argv[0]),
+        with open(path.join(path.dirname(argv[0]),
                             '.credentials.conf')) as config:
             return dict(x.split(': ')
                         for x in config.read().strip().splitlines())
@@ -210,7 +210,7 @@ def read_credentials():
         pass
 
 
-def main(argv):
+def main():
     """Main method."""
     if "-v" in argv:
         logging.basicConfig(level=logging.INFO)
@@ -227,4 +227,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main()

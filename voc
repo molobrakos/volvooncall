@@ -65,7 +65,7 @@ def main():
     else:
 	credentials = read_credentials()
         if not credentials:
-            exit("Could not read credentuals and none supplied.")
+            exit("Could not read credentials and none supplied.")
         connection = Connection(**credentials)
 
     if not connection.update():
