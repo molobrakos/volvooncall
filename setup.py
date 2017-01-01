@@ -10,5 +10,6 @@ setup(name="volvooncall",
       license="",
       author="Erik",
       author_email="Erik",
+      scripts=["voc"],
       py_modules=["volvooncall"],
       provides=["volvooncall"],)
