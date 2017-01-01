@@ -120,13 +120,14 @@ class Vehicle(object):
         """Make remote method call."""
         from time import sleep
         res = self._connection.post(method, self._url)
-        if 'service' in res and 'status' in res and res['status'] == 'Started':
+        if ('service' in res and
+            'status' in res and
+            res['status'] == 'Started'):
             service_url = res['service']
             res = self._connection.get(service_url)
             if 'service' in res and 'status' in res and res['status'] == 'MessageDelivered':
                 _LOGGER.info('ok')
                 return True
-
 
     @property
     def is_locked(self):
@@ -144,18 +145,18 @@ class Vehicle(object):
         return (self.preclimatizationSupported and
                 self.preclimatization['status'] != 'off')
 
-    def set_lock(self, state):
+    def lock(self):
         """Lock or unlock."""
-        if state:
-            if not self.lockSupported:
-                print('Lock not supported')
-                return
-            self._call('lock')
-        else:
-            if not self.unlockSupported:
-                print('Unlock not supported')
-                return
-            self._call('unlock')
+        if not self.lockSupported:
+            _LOGGER.error('Lock not supported')
+            return
+        self._call('lock')
+
+    def unlock(self):
+        if not self.unlockSupported:
+            _LOGGER.error('Unlock not supported')
+            return
+        self._call('unlock')
 
     def set_heater_or_preclimatization(self, state):
         if self.remoteHeaterSupported:
@@ -164,12 +165,12 @@ class Vehicle(object):
             self._call('preclimatization/start'
                        if state else 'preclimatization/stop')
         else:
-            print('Not supported')
+            _LOGGER.error('Not supported')
 
     def set_heater(self, state):
         """Turn on/off heater."""
         if not self.remoteHeaterSupported:
-            print('Remote heater not supported')
+            _LOGGER.error('Remote heater not supported')
             return
         self._call('heater/start' if state else 'heater/stop')
 

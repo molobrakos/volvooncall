@@ -90,9 +90,9 @@ def main():
     elif args['heater']:
         vehicle.set_heater_or_preclimatization(args['start'])
     elif args['lock']:
-        vehicle.set_lock(True)
+        vehicle.lock()
     elif args['unlock']:
-        vehicle.set_lock(False)
+        vehicle.unlock()
 
 
 if __name__ == '__main__':
