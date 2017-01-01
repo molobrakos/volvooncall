@@ -20,7 +20,7 @@ Options:
   --version                         Show version
 """
 
-import sys
+from sys import exit
 import docopt
 import logging
 
@@ -43,10 +43,10 @@ def print_vehicle(vehicle):
     print('    preclimatization: %s' % ('on' if vehicle.is_preclimatization_on else 'off'))
 
 
-def main(argv):
+def main():
     """Command line interface."""
 
-    args = docopt.docopt(__doc__, argv=argv[1:],
+    args = docopt.docopt(__doc__,
 			 version=__version__)
 
     if args['-v'] == 2:
@@ -61,16 +61,17 @@ def main(argv):
 				args['--pass'])
     else:
 	credentials = read_credentials()
-	connection = Connection(**credentials)
+        if not credentials:
+            exit("Could not read credentuals and none supplied.")
+        connection = Connection(**credentials)
 
     if not connection.update():
-	print('Could not connect to the server.')
-	sys.exit(-1)
+	exit('Could not connect to the server.')
 
     if args['list']:
 	for vehicle in connection.vehicles:
 	    print(vehicle)
-            sys.exit(0)
+            exit()
 
     if args['--vin']:
 	vehicle = connection.vehicle(args['--vin'])
@@ -79,11 +80,11 @@ def main(argv):
 
     if not vehicle:
         print('Vehicle not found')
-        sys.exit(-1)
+        exit('Vehicle not found')
 
     if args['status']:
         print_vehicle(vehicle)
-        sys.exit(0)
+        exit()
     elif args['heater']:
         vehicle.set_heater_or_preclimatization(args['start'])
     elif args['lock']:
@@ -93,4 +94,4 @@ def main(argv):
 
 
 if __name__ == '__main__':
-   main(sys.argv)
+   main()
