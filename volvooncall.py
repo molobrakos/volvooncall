@@ -143,6 +143,15 @@ class Vehicle(object):
                 return
             self._call('unlock')
 
+    def set_heater_or_preclimatization(self, state):
+        if self.remoteHeaterSupported:
+            self._call('heater/start' if state else 'heater/stop')
+        elif self.preclimatizationSupported:
+            self._call('preclimatization/start'
+                       if state else 'preclimatization/stop')
+        else:
+            print('Not supported')
+
     def set_heater(self, state):
         """Turn on/off heater."""
         if not self.remoteHeaterSupported:
