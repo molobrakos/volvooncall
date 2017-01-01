@@ -20,7 +20,7 @@ HEADERS = {'X-Device-Id': 'Device',
            'X-OS-Version': 22,
            'Content-Type': 'application/json'}
 
-TIMEOUT = timedelta(seconds=5)
+TIMEOUT = timedelta(seconds=10)
 
 
 def _obj_parser(obj):
@@ -69,6 +69,20 @@ class Connection(object):
         """Perform a query to the online service."""
         return self._query(ref, rel, True)
 
+    def call(self, method, rel=SERVICE_URL):
+        """Make remote method call."""
+        res = self.post(method, rel)
+        if ('service' in res and
+            'status' in res and
+            res['status'] == 'Started'):
+            service_url = res['service']
+            res = self.get(service_url)
+            if ('service' in res and
+                'status' in res and
+                res['status'] == 'MessageDelivered'):
+                _LOGGER.info('ok')
+                return True
+
     def update(self, reset=False):
         """Update status."""
         try:
@@ -116,18 +130,9 @@ class Vehicle(object):
         self._connection = conn
         self._url = url
 
-    def _call(self, method):
+    def call(self, method):
         """Make remote method call."""
-        from time import sleep
-        res = self._connection.post(method, self._url)
-        if ('service' in res and
-            'status' in res and
-            res['status'] == 'Started'):
-            service_url = res['service']
-            res = self._connection.get(service_url)
-            if 'service' in res and 'status' in res and res['status'] == 'MessageDelivered':
-                _LOGGER.info('ok')
-                return True
+        return self._connection.call(method, self._url)
 
     @property
     def is_locked(self):
@@ -150,20 +155,20 @@ class Vehicle(object):
         if not self.lockSupported:
             _LOGGER.error('Lock not supported')
             return
-        self._call('lock')
+        self.call('lock')
 
     def unlock(self):
         if not self.unlockSupported:
             _LOGGER.error('Unlock not supported')
             return
-        self._call('unlock')
+        self.call('unlock')
 
     def set_heater_or_preclimatization(self, state):
         if self.remoteHeaterSupported:
-            self._call('heater/start' if state else 'heater/stop')
+            self.call('heater/start' if state else 'heater/stop')
         elif self.preclimatizationSupported:
-            self._call('preclimatization/start'
-                       if state else 'preclimatization/stop')
+            self.call('preclimatization/start'
+                      if state else 'preclimatization/stop')
         else:
             _LOGGER.error('Not supported')
 
@@ -172,15 +177,15 @@ class Vehicle(object):
         if not self.remoteHeaterSupported:
             _LOGGER.error('Remote heater not supported')
             return
-        self._call('heater/start' if state else 'heater/stop')
+        self.call('heater/start' if state else 'heater/stop')
 
     def set_preclimatization(self, state):
         """Turn on/off heater."""
         if not self.preclimatizationSupported:
             print('Preclimatization not supported')
             return
-        self._call('preclimatization/start'
-                   if state else 'preclimatization/stop')
+        self.call('preclimatization/start'
+                  if state else 'preclimatization/stop')
 
     def __str__(self):
         return '%s (%s/%d) %s' % (

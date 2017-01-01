@@ -10,6 +10,7 @@ Usage:
   voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] status
   voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] (lock | unlock)
   voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] heater (start | stop)
+  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] call <method>
 
 Options:
   -u <username>, --user=<username>  VOC username
@@ -86,13 +87,14 @@ def main():
 
     if args['status']:
         print_vehicle(vehicle)
-        exit()
     elif args['heater']:
         vehicle.set_heater_or_preclimatization(args['start'])
     elif args['lock']:
         vehicle.lock()
     elif args['unlock']:
         vehicle.unlock()
+    elif args['call']:
+        vehicle.call(args['<method>'])
 
 
 if __name__ == '__main__':
