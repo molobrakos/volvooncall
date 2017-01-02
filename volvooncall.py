@@ -117,11 +117,9 @@ class Connection(object):
 
     def vehicle(self, vin):
         """Return vehicle for given vin."""
-        for vehicle in self.vehicles:
-            if ((vehicle.vin.lower() == vin.lower() or
-                 vehicle.registrationNumber.lower() == vin.lower())):
-                return vehicle
-
+        return next((vehicle for vehicle in self.vehicles
+                     if vehicle.vin.lower() == vin.lower() or
+                     vehicle.registrationNumber.lower() == vin.lower()), None)
 
 class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
@@ -143,13 +141,10 @@ class Vehicle(object):
     @property
     def is_heater_on(self):
         """Return status of heater."""
-        return self.remoteHeaterSupported and self.heater['status'] != 'off'
-
-    @property
-    def is_preclimatization_on(self):
-        """Return status of heater."""
-        return (self.preclimatizationSupported and
-                self.preclimatization['status'] != 'off')
+        return ((self.remoteHeaterSupported and
+                 self.heater['status'] != 'off') or
+                (self.preclimatizationSupported and
+                 self.preclimatization['status'] != 'off'))
 
     def lock(self):
         """Lock."""
@@ -165,30 +160,23 @@ class Vehicle(object):
             return
         self.call('unlock')
 
-    def set_heater_or_preclimatization(self, state):
-        """Set status of heater."""
+    def start_heater(self):
+        """Turn on/off heater."""
         if self.remoteHeaterSupported:
-            self.call('heater/start' if state else 'heater/stop')
+            self.call('heater/start')
         elif self.preclimatizationSupported:
-            self.call('preclimatization/start'
-                      if state else 'preclimatization/stop')
+            self.call('preclimatization/start')
         else:
-            _LOGGER.error('Not supported')
+            _LOGGER.error("No heater or preclimatization support.")
 
-    def set_heater(self, state):
+    def stop_heater(self):
         """Turn on/off heater."""
-        if not self.remoteHeaterSupported:
-            _LOGGER.error('Remote heater not supported')
-            return
-        self.call('heater/start' if state else 'heater/stop')
-
-    def set_preclimatization(self, state):
-        """Turn on/off heater."""
-        if not self.preclimatizationSupported:
-            print('Preclimatization not supported')
-            return
-        self.call('preclimatization/start'
-                  if state else 'preclimatization/stop')
+        if self.remoteHeaterSupported:
+            self.call('heater/stop')
+        elif self.preclimatizationSupported:
+            self.call('preclimatization/stop')
+        else:
+            _LOGGER.error("No heater or preclimatization support.")
 
     def __str__(self):
         return '%s (%s/%d) %s' % (
