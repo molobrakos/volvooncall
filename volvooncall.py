@@ -72,17 +72,25 @@ class Connection(object):
 
     def call(self, method, rel=SERVICE_URL):
         """Make remote method call."""
-        res = self.post(method, rel)
-        if ('service' in res and
-                'status' in res and
-                res['status'] == 'Started'):
+        try:
+            res = self.post(method, rel)
+
+            if ('service' and 'status' not in res or
+                res['status'] != 'Started'):
+                _LOGGER.error('Failed to execute: %s', res['status'])
+                return
+
             service_url = res['service']
             res = self.get(service_url)
-            if (('service' in res and
-                 'status' in res and
-                 res['status'] == 'MessageDelivered')):
-                _LOGGER.info('ok')
-                return True
+            if ('service' and 'status' not in res or
+                res['status'] != 'MessageDelivered'):
+                _LOGGER.error('Message not delivered: %s', res['status'])
+                return
+
+            _LOGGER.debug('Message delivered')
+            return True
+        except RequestException as error:
+            _LOGGER.error('Failure to execute: %s', error)
 
     def update(self, reset=False):
         """Update status."""
