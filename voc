@@ -82,13 +82,15 @@ def main():
         vehicle = next(connection.vehicles)
 
     if not vehicle:
-        print('Vehicle not found')
         exit('Vehicle not found')
 
     if args['status']:
         print_vehicle(vehicle)
     elif args['heater']:
-        vehicle.set_heater_or_preclimatization(args['start'])
+        if args['start']:
+            vehicle.start_heater()
+        else:
+            vehicle.stop_heater()
     elif args['lock']:
         vehicle.lock()
     elif args['unlock']:
