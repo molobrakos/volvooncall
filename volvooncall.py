@@ -60,7 +60,7 @@ class Connection(object):
         except RequestException as error:
             _LOGGER.error("Failure when communcating with the server: %s",
                           error)
-            return res
+            raise
 
     def get(self, ref, rel=SERVICE_URL):
         """Perform a query to the online service."""

@@ -6,19 +6,19 @@ Retrieve information from VOC
 Usage:
   voc (-h | --help)
   voc --version
-  voc [-v | -vv] [(-u <username> -p <password>)] list
-  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] status
-  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] (lock | unlock)
-  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] heater (start | stop)
-  voc [-v | -vv] [(-u <username> -p <password>)] [--vin <vin>] call <method>
+  voc [-v|-vv] [options] list
+  voc [-v|-vv] [options] status
+  voc [-v|-vv] [options] (lock | unlock)
+  voc [-v|-vv] [options] heater (start | stop)
+  voc [-v|-vv] [options] call <method>
 
 Options:
-  -u <username>, --user=<username>  VOC username
-  -p <password>, --pass=<password>  VOC password
-  --vin=<vin>                       Specify vehicle number
-  -h --help                         Show this message
-  -v                                Increase verbosity
-  --version                         Show version
+  -u <username>     VOC username
+  -p <password>     VOC password
+  -i <vin>          Vehicle VIN or registration number
+  -h --help         Show this message
+  -v,-vv            Increase verbosity
+  --version         Show version
 """
 
 from sys import exit
@@ -59,9 +59,9 @@ def main():
     else:
 	logging.basicConfig(level=logging.ERROR)
 
-    if args['--user'] and args['--pass']:
-	connection = Connection(args['--user'],
-				args['--pass'])
+    if args['-u'] and args['-p']:
+	connection = Connection(args['-u'],
+				args['-p'])
     else:
 	credentials = read_credentials()
         if not credentials:
@@ -76,8 +76,8 @@ def main():
 	    print(vehicle)
             exit()
 
-    if args['--vin']:
-	vehicle = connection.vehicle(args['--vin'])
+    if args['-i']:
+	vehicle = connection.vehicle(args['-i'])
     else:
         vehicle = next(connection.vehicles)
 
