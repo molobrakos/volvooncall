@@ -51,8 +51,10 @@ class Connection(object):
         try:
             url = urljoin(rel, ref)
             _LOGGER.debug('Request for %s', url)
-            method = self._session.post if post else self._session.get
-            res = method(url, timeout=TIMEOUT.seconds)
+            if post:
+                res = self._session.post(url, data='{}', timeout=TIMEOUT.seconds)
+            else:
+                res = self._session.get(url, timeout=TIMEOUT.seconds)
             res.raise_for_status()
             res = res.json(object_hook=_obj_parser)
             _LOGGER.debug('Received %s', res)
