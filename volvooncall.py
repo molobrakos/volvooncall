@@ -24,7 +24,7 @@ TIMEOUT = timedelta(seconds=10)
 
 
 def _obj_parser(obj):
-    """Parse datetime (only Python3) because of timezone."""
+    """Parse datetime (only Python3 because of timezone)."""
     for key, val in obj.items():
         try:
             obj[key] = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S%z')
