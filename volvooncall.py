@@ -52,7 +52,8 @@ class Connection(object):
             url = urljoin(rel, ref)
             _LOGGER.debug('Request for %s', url)
             if post:
-                res = self._session.post(url, data='{}', timeout=TIMEOUT.seconds)
+                res = self._session.post(url, data='{}',
+                                         timeout=TIMEOUT.seconds)
             else:
                 res = self._session.get(url, timeout=TIMEOUT.seconds)
             res.raise_for_status()
@@ -77,15 +78,15 @@ class Connection(object):
         try:
             res = self.post(method, rel)
 
-            if ('service' and 'status' not in res or
-                res['status'] != 'Started'):
+            if (('service' and 'status' not in res or
+                 res['status'] != 'Started')):
                 _LOGGER.error('Failed to execute: %s', res['status'])
                 return
 
             service_url = res['service']
             res = self.get(service_url)
-            if ('service' and 'status' not in res or
-                res['status'] != 'MessageDelivered'):
+            if (('service' and 'status' not in res or
+                 res['status'] != 'MessageDelivered')):
                 _LOGGER.error('Message not delivered: %s', res['status'])
                 return
 
@@ -130,6 +131,7 @@ class Connection(object):
         return next((vehicle for vehicle in self.vehicles
                      if vehicle.vin.lower() == vin.lower() or
                      vehicle.registrationNumber.lower() == vin.lower()), None)
+
 
 class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
