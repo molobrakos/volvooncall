@@ -39,11 +39,16 @@ def lookup_position(lat, lon):
         _LOGGER.info('geopy not installed. position lookup not available')
 
 def print_vehicle(vehicle, geolocate=False):
-    print('%s %dkm (fuel %d%% %dkm)' % (
+    s = '%s %dkm' % (
 	vehicle,
-	vehicle.odometer / 1000,
-	vehicle.fuelAmountLevel,
-	vehicle.distanceToEmpty))
+	vehicle.odometer / 1000)
+
+    if vehicle.fuelAmountLevel:
+        s += '(fuel %s%% %skm)' % (
+            vehicle.fuelAmountLevel,
+            vehicle.distanceToEmpty)
+
+    print(s)
 
     try:
         lat, lon = (vehicle.position['latitude'],
