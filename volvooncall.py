@@ -86,7 +86,9 @@ class Connection(object):
             service_url = res['service']
             res = self.get(service_url)
             if (('service' and 'status' not in res or
-                 res['status'] != 'MessageDelivered')):
+                 res['status'] not in ['MessageDelivered',
+                                       'Successful',
+                                       'Started'])):
                 _LOGGER.error('Message not delivered: %s', res['status'])
                 return
 
