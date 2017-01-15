@@ -17,7 +17,7 @@ SERVICE_URL = 'https://vocapi.wirelesscar.net/customerapi/rest/v3.0/'
 HEADERS = {'X-Device-Id': 'Device',
            'X-OS-Type': 'Android',
            'X-Originator-Type': 'App',
-           'X-OS-Version': 22,
+           'X-OS-Version': '22',
            'Content-Type': 'application/json'}
 
 TIMEOUT = timedelta(seconds=10)
