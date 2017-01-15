@@ -45,7 +45,7 @@ def print_vehicle(vehicle, geolocate=False):
 	vehicle.odometer / 1000)
 
     if vehicle.fuelAmountLevel:
-        s += '(fuel %s%% %skm)' % (
+        s += ' (fuel %s%% %skm)' % (
             vehicle.fuelAmountLevel,
             vehicle.distanceToEmpty)
 
