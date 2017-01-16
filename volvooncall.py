@@ -9,7 +9,7 @@ from sys import argv
 from requests import Session, RequestException
 from requests.compat import urljoin
 
-__version__ = '0.1.6'
+__version__ = '0.1.7'
 
 _LOGGER = logging.getLogger(__name__)
 
