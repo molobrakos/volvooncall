@@ -1,10 +1,9 @@
 #!/usr/bin/python
 
 from setuptools import setup
-from volvooncall import __version__
 
 setup(name="volvooncall",
-      version=__version__,
+      version='0.1.8',
       description="Communicate with VOC",
       url="https://github.com/molobrakos/volvooncall",
       license="",
@@ -14,7 +13,8 @@ setup(name="volvooncall",
       py_modules=["volvooncall"],
       provides=["volvooncall"],
       install_requires=[
-          'docopt',
           'requests'
       ],
-)
+      extras_require={
+          'console':  ['docopt'],
+      })
