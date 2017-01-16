@@ -1,2 +1,2 @@
-requests
-docopt
+requests==2.9.1
+setuptools==20.7.0
