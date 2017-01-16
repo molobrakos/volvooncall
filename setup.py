@@ -12,4 +12,9 @@ setup(name="volvooncall",
       author_email="Erik",
       scripts=["voc"],
       py_modules=["volvooncall"],
-      provides=["volvooncall"],)
+      provides=["volvooncall"],
+      install_requires=[
+          'docopt',
+          'requests'
+      ],
+)
