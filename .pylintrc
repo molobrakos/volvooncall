@@ -1,6 +1,0 @@
-[MASTER]
-reports=no
-
-disable=
-  locally-disabled,
-  too-few-public-methods
