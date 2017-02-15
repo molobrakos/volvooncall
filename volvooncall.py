@@ -13,7 +13,7 @@ __version__ = '0.1.9'
 
 _LOGGER = logging.getLogger(__name__)
 
-SERVICE_URL = 'https://vocapi.wirelesscar.net/customerapi/rest/v3.0/'
+DEFAULT_SERVICE_URL = 'https://vocapi.wirelesscar.net/customerapi/rest/v3.0/'
 HEADERS = {'X-Device-Id': 'Device',
            'X-OS-Type': 'Android',
            'X-Originator-Type': 'App',
@@ -37,19 +37,20 @@ class Connection(object):
 
     """Connection to the VOC server."""
 
-    def __init__(self, username, password):
+    def __init__(self, username, password, service_url=DEFAULT_SERVICE_URL):
         """Initialize."""
         self._session = Session()
+        self._service_url = service_url
         self._session.headers.update(HEADERS)
         self._session.auth = (username,
                               password)
         self._state = {}
         _LOGGER.debug('User: <%s>', username)
 
-    def _query(self, ref, rel=SERVICE_URL, post=False):
+    def _query(self, ref, rel=None, post=False):
         """Perform a query to the online service."""
         try:
-            url = urljoin(rel, ref)
+            url = urljoin(rel or self._service_url, ref)
             _LOGGER.debug('Request for %s', url)
             if post:
                 res = self._session.post(url, data='{}',
@@ -65,15 +66,15 @@ class Connection(object):
                           error)
             raise
 
-    def get(self, ref, rel=SERVICE_URL):
+    def get(self, ref, rel=None):
         """Perform a query to the online service."""
         return self._query(ref, rel)
 
-    def post(self, ref, rel=SERVICE_URL):
+    def post(self, ref, rel=None):
         """Perform a query to the online service."""
         return self._query(ref, rel, True)
 
-    def call(self, method, rel=SERVICE_URL):
+    def call(self, method, rel=None):
         """Make remote method call."""
         try:
             res = self.post(method, rel)
@@ -206,7 +207,8 @@ def read_credentials():
         with open(path.join(path.dirname(argv[0]),
                             '.credentials.conf')) as config:
             return dict(x.split(': ')
-                        for x in config.read().strip().splitlines())
+                        for x in config.read().strip().splitlines()
+                        if not x.startswith('#'))
     except (IOError, OSError):
         pass
 
