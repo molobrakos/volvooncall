@@ -41,8 +41,8 @@ def lookup_position(lat, lon):
 
 def print_vehicle(vehicle, geolocate=False):
     s = '%s %dkm' % (
-	vehicle,
-	vehicle.odometer / 1000)
+        vehicle,
+        vehicle.odometer / 1000)
 
     if vehicle.fuelAmountLevel:
         s += ' (fuel %s%% %skm)' % (
@@ -70,7 +70,7 @@ def main():
     """Command line interface."""
 
     args = docopt.docopt(__doc__,
-			 version=__version__)
+                         version=__version__)
 
     if args['-v'] == 2:
         level=logging.DEBUG
@@ -84,11 +84,11 @@ def main():
 
     if args['-u'] and args['-p']:
         connection = Connection(args['-u'],
-				args['-p'])
+                                args['-p'])
     else:
         credentials = read_credentials()
         if not credentials:
-            exit("Could not read credentials and none supplied.")
+            exit('Could not read credentials and none supplied.')
         connection = Connection(**credentials)
 
     if not connection.update():
