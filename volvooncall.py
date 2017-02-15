@@ -62,7 +62,7 @@ class Connection(object):
             _LOGGER.debug('Received %s', res)
             return res
         except RequestException as error:
-            _LOGGER.error("Failure when communcating with the server: %s",
+            _LOGGER.error('Failure when communcating with the server: %s',
                           error)
             raise
 
@@ -182,7 +182,7 @@ class Vehicle(object):
         elif self.preclimatizationSupported:
             self.call('preclimatization/start')
         else:
-            _LOGGER.error("No heater or preclimatization support.")
+            _LOGGER.error('No heater or preclimatization support.')
 
     def stop_heater(self):
         """Turn on/off heater."""
@@ -191,7 +191,7 @@ class Vehicle(object):
         elif self.preclimatizationSupported:
             self.call('preclimatization/stop')
         else:
-            _LOGGER.error("No heater or preclimatization support.")
+            _LOGGER.error('No heater or preclimatization support.')
 
     def __str__(self):
         return '%s (%s/%d) %s' % (
@@ -216,9 +216,9 @@ def read_credentials():
 
 def main():
     """Main method."""
-    if "-v" in argv:
+    if '-v' in argv:
         logging.basicConfig(level=logging.INFO)
-    elif "-vv" in argv:
+    elif '-vv' in argv:
         logging.basicConfig(level=logging.DEBUG)
     else:
         logging.basicConfig(level=logging.ERROR)
