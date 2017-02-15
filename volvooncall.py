@@ -158,6 +158,7 @@ class Vehicle(object):
         """Return status of heater."""
         return ((self.remoteHeaterSupported or
                  self.preclimatizationSupported) and
+                hasattr(self, 'heater') and
                 self.heater['status'] != 'off')
 
     def lock(self):
