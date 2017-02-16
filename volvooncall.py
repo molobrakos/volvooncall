@@ -8,6 +8,7 @@ from datetime import timedelta, datetime
 from sys import argv
 from requests import Session, RequestException
 from requests.compat import urljoin
+import re
 
 __version__ = '0.1.9'
 
@@ -132,14 +133,24 @@ class Connection(object):
         """Return vehicle for given vin."""
         return next((vehicle for vehicle in self.vehicles
                      if vehicle.vin.lower() == vin.lower() or
-                     vehicle.registrationNumber.lower() == vin.lower()), None)
+                     vehicle.registration_number.lower() == vin.lower()), None)
 
+
+def camel2slug(d):
+    if not isinstance(d, dict):
+        return d
+    return {re.sub("([A-Z])", "_\\1", k).lower().lstrip("_"):
+            camel2slug(v)
+            for k,v in d.items()}
 
 class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
     # pylint: disable=no-member
     def __init__(self, conn, url, data):
-        self.__dict__ = data  # cave: assume no name clashes
+        self.data = data
+        for k, v in camel2slug(data).items():
+            if not hasattr(self, k):
+                setattr(self, k, v)
         self._connection = conn
         self._url = url
 
@@ -150,52 +161,52 @@ class Vehicle(object):
     @property
     def is_locked(self):
         """Lock status."""
-        return self.carLocked
+        return self.car_locked
 
     @property
     def is_heater_on(self):
         """Return status of heater."""
-        return ((self.remoteHeaterSupported or
-                 self.preclimatizationSupported) and
+        return ((self.remote_heater_supported or
+                 self.preclimatization_supported) and
                 self.heater['status'] != 'off')
 
     def lock(self):
         """Lock."""
-        if not self.lockSupported:
+        if not self.lock_supported:
             _LOGGER.error('Lock not supported')
             return
         self.call('lock')
 
     def unlock(self):
         """Unlock."""
-        if not self.unlockSupported:
+        if not self.unlock_supported:
             _LOGGER.error('Unlock not supported')
             return
         self.call('unlock')
 
     def start_heater(self):
         """Turn on/off heater."""
-        if self.remoteHeaterSupported:
+        if self.remote_heater_supported:
             self.call('heater/start')
-        elif self.preclimatizationSupported:
+        elif self.preclimatization_supported:
             self.call('preclimatization/start')
         else:
             _LOGGER.error("No heater or preclimatization support.")
 
     def stop_heater(self):
         """Turn on/off heater."""
-        if self.remoteHeaterSupported:
+        if self.remote_heater_supported:
             self.call('heater/stop')
-        elif self.preclimatizationSupported:
+        elif self.preclimatization_supported:
             self.call('preclimatization/stop')
         else:
             _LOGGER.error("No heater or preclimatization support.")
 
     def __str__(self):
         return '%s (%s/%d) %s' % (
-            self.registrationNumber,
-            self.vehicleType,
-            self.modelYear,
+            self.registration_number,
+            self.vehicle_type,
+            self.model_year,
             self.vin)
 
 

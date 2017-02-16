@@ -44,10 +44,10 @@ def print_vehicle(vehicle, geolocate=False):
 	vehicle,
 	vehicle.odometer / 1000)
 
-    if vehicle.fuelAmountLevel:
+    if vehicle.fuel_amount_level:
         s += ' (fuel %s%% %skm)' % (
-            vehicle.fuelAmountLevel,
-            vehicle.distanceToEmpty)
+            vehicle.fuel_amount_level,
+            vehicle.distance_to_empty)
 
     print(s)
 
@@ -112,18 +112,16 @@ def main():
     elif args['print']:
         attr = args['<attribute>']
         if attr:
-            if hasattr(vehicle, attr):
-                print(getattr(vehicle, attr))
-            else:
+            if not attr in vehicle.data:
                 exit('unknown attribute')
+            print(vehicle.data[attr])
         else:
-            attrs = {k:v for k,v in vars(vehicle).items() if not k.startswith('_')}
             from datetime import datetime
             import json
             def serialize(obj):
                 if isinstance(obj, datetime):
                     return obj.isoformat()
-            print(json.dumps(attrs, indent=2, default=serialize))
+            print(json.dumps(vehicle.data, indent=2, default=serialize))
     elif args['heater']:
         if args['start']:
             vehicle.start_heater()
