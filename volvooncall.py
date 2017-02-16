@@ -6,9 +6,9 @@ from __future__ import print_function
 import logging
 from datetime import timedelta, datetime
 from sys import argv
+import re
 from requests import Session, RequestException
 from requests.compat import urljoin
-import re
 
 __version__ = '0.1.u10'
 
@@ -137,21 +137,23 @@ class Connection(object):
                      vehicle.registration_number.lower() == vin.lower()), None)
 
 
-def camel2slug(d):
-    if not isinstance(d, dict):
-        return d
+def camel2slug(data):
+    """Convert camelCase to camel_case."""
+    if not isinstance(data, dict):
+        return data
     return {re.sub("([A-Z])", "_\\1", k).lower().lstrip("_"):
             camel2slug(v)
-            for k,v in d.items()}
+            for k, v in data.items()}
+
 
 class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
     # pylint: disable=no-member
     def __init__(self, conn, url, data):
         self.data = data
-        for k, v in camel2slug(data).items():
-            if not hasattr(self, k):
-                setattr(self, k, v)
+        for key, val in camel2slug(data).items():
+            if not hasattr(self, key):
+                setattr(self, key, val)
         self._connection = conn
         self._url = url
 
