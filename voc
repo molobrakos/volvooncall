@@ -23,9 +23,11 @@ Options:
   --version         Show version
 """
 
-from sys import exit
 import docopt
 import logging
+from collections import OrderedDict
+from datetime import datetime
+import json
 
 from volvooncall import __version__, read_credentials, Connection
 
@@ -116,12 +118,10 @@ def main():
                 exit('unknown attribute')
             print(vehicle.data[attr])
         else:
-            from datetime import datetime
-            import json
             def serialize(obj):
                 if isinstance(obj, datetime):
                     return obj.isoformat()
-            print(json.dumps(vehicle.data, indent=2, default=serialize))
+            print(json.dumps(OrderedDict(sorted(vehicle.data.items())), indent=2, default=serialize))
     elif args['heater']:
         if args['start']:
             vehicle.start_heater()
