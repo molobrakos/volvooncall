@@ -10,7 +10,7 @@ import re
 from requests import Session, RequestException
 from requests.compat import urljoin
 
-__version__ = '0.1.10'
+__version__ = '0.2.0'
 
 _LOGGER = logging.getLogger(__name__)
 
