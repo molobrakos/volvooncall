@@ -162,6 +162,12 @@ class Vehicle(object):
         return self._connection.call(method, self._url)
 
     @property
+    def heater_supported(self):
+        return ((self.remote_heater_supported or
+                 self.preclimatization_supported) and
+                hasattr(self, 'heater'))
+
+    @property
     def is_locked(self):
         """Lock status."""
         return self.car_locked
@@ -169,9 +175,7 @@ class Vehicle(object):
     @property
     def is_heater_on(self):
         """Return status of heater."""
-        return ((self.remote_heater_supported or
-                 self.preclimatization_supported) and
-                hasattr(self, 'heater') and
+        return (self.heater_supported and
                 self.heater['status'] != 'off')
 
     def lock(self):
