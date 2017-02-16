@@ -1,5 +1,6 @@
 .credentials.conf
 *.egg-info
+*.pyc
 MANIFEST
 .cache
 .tox
