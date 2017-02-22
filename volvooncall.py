@@ -21,7 +21,7 @@ HEADERS = {'X-Device-Id': 'Device',
            'X-OS-Version': '22',
            'Content-Type': 'application/json'}
 
-TIMEOUT = timedelta(seconds=10)
+TIMEOUT = timedelta(seconds=30)
 
 
 def _obj_parser(obj):
@@ -160,6 +160,10 @@ class Vehicle(object):
     def call(self, method):
         """Make remote method call."""
         return self._connection.call(method, self._url)
+
+    @property
+    def position_supported(self):
+        return 'position' in self.data
 
     @property
     def heater_supported(self):
