@@ -152,7 +152,7 @@ class Vehicle(object):
     def __init__(self, conn, url, data):
         self.data = data
         for key, val in camel2slug(data).items():
-            if not hasattr(self, key):
+            if not hasattr(self, key):  # do not overwrite
                 setattr(self, key, val)
         self._connection = conn
         self._url = url
@@ -163,10 +163,12 @@ class Vehicle(object):
 
     @property
     def position_supported(self):
+        """Return true if vehichle has position."""
         return 'position' in self.data
 
     @property
     def heater_supported(self):
+        """Return true if vehichle has heater."""
         return ((self.remote_heater_supported or
                  self.preclimatization_supported) and
                 hasattr(self, 'heater'))
