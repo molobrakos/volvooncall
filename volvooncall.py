@@ -138,24 +138,34 @@ class Vehicle(object):
 
     def post(self, query, **data):
         """Perform a query to the online service."""
-        return self._connection.post(query, self._url, data)
+        return self._connection.post(query, self._url, **data)
 
     def call(self, method):
         """Make remote method call."""
         try:
             res = self.post(method)
 
-            if (('service' and 'status' not in res or
-                 res['status'] != 'Started')):
+            if 'service' and 'status' not in res:
                 _LOGGER.warning('Failed to execute: %s', res['status'])
                 return
 
+            if res['status'] not in ['Queued', 'Started']:
+                _LOGGER.warning('Failed to execute: %s', res['status'])
+                return
+
+            # if Queued -> wait?
+
             service_url = res['service']
             res = self.get(service_url)
-            if (('service' and 'status' not in res or
-                 res['status'] not in ['MessageDelivered',
-                                       'Successful',
-                                       'Started'])):
+
+            if 'service' and 'status' not in res:
+                _LOGGER.warning('Message not delivered: %s', res['status'])
+
+            # if still Queued -> wait?
+
+            if res['status'] not in ['MessageDelivered',
+                                     'Successful',
+                                     'Started']:
                 _LOGGER.warning('Message not delivered: %s', res['status'])
                 return
 
