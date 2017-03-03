@@ -75,30 +75,6 @@ class Connection(object):
         """Perform a query to the online service."""
         return self._query(ref, rel, True)
 
-    def call(self, method, rel=None):
-        """Make remote method call."""
-        try:
-            res = self.post(method, rel)
-
-            if (('service' and 'status' not in res or
-                 res['status'] != 'Started')):
-                _LOGGER.warning('Failed to execute: %s', res['status'])
-                return
-
-            service_url = res['service']
-            res = self.get(service_url)
-            if (('service' and 'status' not in res or
-                 res['status'] not in ['MessageDelivered',
-                                       'Successful',
-                                       'Started'])):
-                _LOGGER.warning('Message not delivered: %s', res['status'])
-                return
-
-            _LOGGER.debug('Message delivered')
-            return True
-        except RequestException as error:
-            _LOGGER.warning('Failure to execute: %s', error)
-
     def update(self, reset=False):
         """Update status."""
         try:
@@ -159,7 +135,27 @@ class Vehicle(object):
 
     def call(self, method):
         """Make remote method call."""
-        return self._connection.call(method, self._url)
+        try:
+            res = self.post(method)
+
+            if (('service' and 'status' not in res or
+                 res['status'] != 'Started')):
+                _LOGGER.warning('Failed to execute: %s', res['status'])
+                return
+
+            service_url = res['service']
+            res = self.get(service_url)
+            if (('service' and 'status' not in res or
+                 res['status'] not in ['MessageDelivered',
+                                       'Successful',
+                                       'Started'])):
+                _LOGGER.warning('Message not delivered: %s', res['status'])
+                return
+
+            _LOGGER.debug('Message delivered')
+            return True
+        except RequestException as error:
+            _LOGGER.warning('Failure to execute: %s', error)
 
     def get(self, query):
         return self._connection.get(query, self._url)
