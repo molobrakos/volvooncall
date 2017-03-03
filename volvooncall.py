@@ -5,6 +5,7 @@
 from __future__ import print_function
 import logging
 from datetime import timedelta, datetime
+from functools import partial
 from sys import argv
 import re
 from requests import Session, RequestException
@@ -48,16 +49,12 @@ class Connection(object):
         self._state = {}
         _LOGGER.debug('User: <%s>', username)
 
-    def _query(self, ref, rel=None, post=False):
+    def _request(self, method, ref, rel=None):
         """Perform a query to the online service."""
         try:
             url = urljoin(rel or self._service_url, ref)
             _LOGGER.debug('Request for %s', url)
-            if post:
-                res = self._session.post(url, data='{}',
-                                         timeout=TIMEOUT.seconds)
-            else:
-                res = self._session.get(url, timeout=TIMEOUT.seconds)
+            res = method(url, timeout=TIMEOUT.seconds)
             res.raise_for_status()
             res = res.json(object_hook=_obj_parser)
             _LOGGER.debug('Received %s', res)
@@ -69,11 +66,13 @@ class Connection(object):
 
     def get(self, ref, rel=None):
         """Perform a query to the online service."""
-        return self._query(ref, rel)
+        method = self._session.get
+        return self._request(method, ref, rel)
 
-    def post(self, ref, rel=None):
+    def post(self, ref, rel=None, **data):
         """Perform a query to the online service."""
-        return self._query(ref, rel, True)
+        method = partial(self._session.post, json=data)
+        return self._request(method, ref, rel)
 
     def update(self, reset=False):
         """Update status."""
@@ -133,6 +132,14 @@ class Vehicle(object):
         self._connection = conn
         self._url = url
 
+    def get(self, query):
+        """Perform a query to the online service."""
+        return self._connection.get(query, self._url)
+
+    def post(self, query, **data):
+        """Perform a query to the online service."""
+        return self._connection.post(query, self._url, data)
+
     def call(self, method):
         """Make remote method call."""
         try:
@@ -156,9 +163,6 @@ class Vehicle(object):
             return True
         except RequestException as error:
             _LOGGER.warning('Failure to execute: %s', error)
-
-    def get(self, query):
-        return self._connection.get(query, self._url)
 
     @property
     def position_supported(self):
@@ -185,6 +189,7 @@ class Vehicle(object):
 
     @property
     def trips(self):
+        """Return trips."""
         return self.get('trips')
 
     def lock(self):
@@ -230,10 +235,10 @@ class Vehicle(object):
 def read_credentials():
     """Read credentials from file."""
     from os.path import join, dirname, expanduser
-    for d in [dirname(argv[0]),
-              expanduser('~')]:
+    for directory in [dirname(argv[0]),
+                      expanduser('~')]:
         try:
-            with open(join(d, '.voc.conf')) as config:
+            with open(join(directory, '.voc.conf')) as config:
                 return dict(x.split(': ')
                             for x in config.read().strip().splitlines()
                             if not x.startswith('#'))
