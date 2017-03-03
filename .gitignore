@@ -1,4 +1,4 @@
-.credentials.conf
+.voc.conf
 *.egg-info
 *.pyc
 MANIFEST
