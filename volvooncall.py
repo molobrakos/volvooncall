@@ -161,6 +161,9 @@ class Vehicle(object):
         """Make remote method call."""
         return self._connection.call(method, self._url)
 
+    def get(self, query):
+        return self._connection.get(query, self._url)
+
     @property
     def position_supported(self):
         """Return true if vehichle has position."""
@@ -183,6 +186,10 @@ class Vehicle(object):
         """Return status of heater."""
         return (self.heater_supported and
                 self.heater['status'] != 'off')
+
+    @property
+    def trips(self):
+        return self.get('trips')
 
     def lock(self):
         """Lock."""
@@ -226,15 +233,16 @@ class Vehicle(object):
 
 def read_credentials():
     """Read credentials from file."""
-    try:
-        from os import path
-        with open(path.join(path.dirname(argv[0]),
-                            '.credentials.conf')) as config:
-            return dict(x.split(': ')
-                        for x in config.read().strip().splitlines()
-                        if not x.startswith('#'))
-    except (IOError, OSError):
-        pass
+    from os.path import join, dirname, expanduser
+    for d in [dirname(argv[0]),
+              expanduser('~')]:
+        try:
+            with open(join(d, '.voc.conf')) as config:
+                return dict(x.split(': ')
+                            for x in config.read().strip().splitlines()
+                            if not x.startswith('#'))
+        except (IOError, OSError):
+            pass
 
 
 def main():
