@@ -86,14 +86,18 @@ def main():
     FORMAT = '%(asctime)s %(name)s: %(message)s'
     logging.basicConfig(level=level, format=FORMAT, datefmt='%H:%M:%S')
 
+    credentials = read_credentials()
+
     if args['-u'] and args['-p']:
-        connection = Connection(args['-u'],
-                                args['-p'])
-    else:
-        credentials = read_credentials()
-        if not credentials:
-            exit('Could not read credentials and none supplied.')
+        credentials.update(username=args['-u'],
+                           password=args['-p'])
+    if args['-s']:
+        credentals.update(service_url = args['-s'])
+
+    try:
         connection = Connection(**credentials)
+    except TypeError:
+        exit('Could not read credentials and none supplied.')
 
     if not connection.update():
         exit('Could not connect to the server.')
