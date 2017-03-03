@@ -63,8 +63,8 @@ class Connection(object):
             _LOGGER.debug('Received %s', res)
             return res
         except RequestException as error:
-            _LOGGER.error('Failure when communcating with the server: %s',
-                          error)
+            _LOGGER.warning('Failure when communcating with the server: %s',
+                            error)
             raise
 
     def get(self, ref, rel=None):
@@ -82,7 +82,7 @@ class Connection(object):
 
             if (('service' and 'status' not in res or
                  res['status'] != 'Started')):
-                _LOGGER.error('Failed to execute: %s', res['status'])
+                _LOGGER.warning('Failed to execute: %s', res['status'])
                 return
 
             service_url = res['service']
@@ -91,13 +91,13 @@ class Connection(object):
                  res['status'] not in ['MessageDelivered',
                                        'Successful',
                                        'Started'])):
-                _LOGGER.error('Message not delivered: %s', res['status'])
+                _LOGGER.warning('Message not delivered: %s', res['status'])
                 return
 
             _LOGGER.debug('Message delivered')
             return True
         except RequestException as error:
-            _LOGGER.error('Failure to execute: %s', error)
+            _LOGGER.warning('Failure to execute: %s', error)
 
     def update(self, reset=False):
         """Update status."""
@@ -122,7 +122,7 @@ class Connection(object):
                 _LOGGER.debug('State: %s', self._state)
             return True
         except (IOError, OSError) as error:
-            _LOGGER.error('Could not query server: %s', error)
+            _LOGGER.warning('Could not query server: %s', error)
 
     @property
     def vehicles(self):
