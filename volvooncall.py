@@ -253,7 +253,8 @@ def read_credentials():
                             for x in config.read().strip().splitlines()
                             if not x.startswith('#'))
         except (IOError, OSError):
-            pass
+            continue
+    return {}
 
 
 def main():
