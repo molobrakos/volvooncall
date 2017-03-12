@@ -195,6 +195,7 @@ class Vehicle(object):
     def is_heater_on(self):
         """Return status of heater."""
         return (self.heater_supported and
+                'status' in self.heater and
                 self.heater['status'] != 'off')
 
     @property
