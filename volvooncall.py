@@ -11,7 +11,7 @@ import re
 from requests import Session, RequestException
 from requests.compat import urljoin
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 _LOGGER = logging.getLogger(__name__)
 
