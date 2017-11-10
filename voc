@@ -110,7 +110,7 @@ def main():
     if args['-i']:
         vehicle = connection.vehicle(args['-i'])
     else:
-        vehicle = next(connection.vehicles)
+        vehicle = next(connection.vehicles, None)
 
     if not vehicle:
         exit('Vehicle not found')
