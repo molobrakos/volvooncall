@@ -1,8 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Communicate with VOC server."""
 
-from __future__ import print_function
 import logging
 from datetime import timedelta, datetime
 from functools import partial
