@@ -15,7 +15,9 @@ __version__ = '0.3.3'
 
 _LOGGER = logging.getLogger(__name__)
 
-DEFAULT_SERVICE_URL = 'https://vocapi.wirelesscar.net/customerapi/rest/v3.0/'
+SERVICE_URL = 'https://vocapi{region}.wirelesscar.net/customerapi/rest/v3.0/'
+DEFAULT_SERVICE_URL = SERVICE_URL.format(region='')
+
 HEADERS = {'X-Device-Id': 'Device',
            'X-OS-Type': 'Android',
            'X-Originator-Type': 'App',
@@ -39,14 +41,15 @@ class Connection(object):
 
     """Connection to the VOC server."""
 
-    def __init__(self, username, password, service_url=DEFAULT_SERVICE_URL):
+    def __init__(self, username, password, service_url=None, region=None):
         """Initialize."""
         self._session = Session()
-        self._service_url = service_url
+        self._service_url = SERVICE_URL.format(region='-'+region) if region else service_url or DEFAULT_SERVICE_URL
         self._session.headers.update(HEADERS)
         self._session.auth = (username,
                               password)
         self._state = {}
+        _LOGGER.debug('Using service <%s>', self._service_url)
         _LOGGER.debug('User: <%s>', username)
 
     def _request(self, method, ref, rel=None):
@@ -66,13 +69,11 @@ class Connection(object):
 
     def get(self, ref, rel=None):
         """Perform a query to the online service."""
-        method = self._session.get
-        return self._request(method, ref, rel)
+        return self._request(self._session.get, ref, rel)
 
     def post(self, ref, rel=None, **data):
         """Perform a query to the online service."""
-        method = partial(self._session.post, json=data)
-        return self._request(method, ref, rel)
+        return self._request(partial(self._session.post, json=data), ref, rel)
 
     def update(self, reset=False):
         """Update status."""
