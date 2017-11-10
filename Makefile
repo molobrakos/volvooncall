@@ -31,7 +31,8 @@ pypireg:
 	python setup.py register -r pypi
 
 pypi:
-	python setup.py sdist upload -r pypi
+	python setup.py sdist
+	twine upload dist/*.tar.gz
 
 release:
 	git diff-index --quiet HEAD -- && make toxlint && make toxtest && bumpversion patch && make pypi
