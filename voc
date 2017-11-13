@@ -17,6 +17,7 @@ Usage:
 Options:
   -u <username>     VOC username
   -p <password>     VOC password
+  -r <region>       VOC region (na, cn, etc.)
   -s <url>          VOC service URL
   -i <vin>          Vehicle VIN or registration number
   -g                Geolocate position
@@ -91,6 +92,8 @@ def main():
     if args['-u'] and args['-p']:
         credentials.update(username=args['-u'],
                            password=args['-p'])
+    if args['-r']:
+        credentials.update(region = args['-r'])
     if args['-s']:
         credentials.update(service_url = args['-s'])
 
