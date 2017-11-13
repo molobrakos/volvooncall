@@ -92,7 +92,7 @@ def main():
         credentials.update(username=args['-u'],
                            password=args['-p'])
     if args['-s']:
-        credentals.update(service_url = args['-s'])
+        credentials.update(service_url = args['-s'])
 
     try:
         connection = Connection(**credentials)
