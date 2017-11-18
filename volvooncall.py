@@ -5,10 +5,12 @@
 import logging
 from datetime import timedelta, datetime
 from functools import partial
-from sys import argv
+from sys import argv, version_info
 import re
 from requests import Session, RequestException
 from requests.compat import urljoin
+
+version_info >= (3, 0) or exit('Python 3 required')
 
 __version__ = '0.4.1'
 
