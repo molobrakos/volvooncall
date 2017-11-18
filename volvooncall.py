@@ -7,8 +7,13 @@ from datetime import timedelta, datetime
 from functools import partial
 from sys import argv, version_info
 import re
+from os import environ as env
+from os.path import join, dirname, expanduser
+from itertools import product
 from requests import Session, RequestException
 from requests.compat import urljoin
+from json import dumps as to_json
+from collections import OrderedDict
 
 version_info >= (3, 0) or exit('Python 3 required')
 
@@ -42,7 +47,7 @@ class Connection(object):
 
     """Connection to the VOC server."""
 
-    def __init__(self, username, password, service_url=None, region=None):
+    def __init__(self, username, password, service_url=None, region=None, **kwargs):
         """Initialize."""
         self._session = Session()
         self._service_url = SERVICE_URL.format(region='-'+region) if region else service_url or DEFAULT_SERVICE_URL
@@ -244,14 +249,28 @@ class Vehicle(object):
             self.model_year,
             self.vin)
 
+    @property
+    def json(self):
+        def serialize(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+        return to_json(
+            OrderedDict(sorted(self.data.items())),
+            indent=4, default=serialize)
 
 def read_credentials():
     """Read credentials from file."""
-    from os.path import join, dirname, expanduser
-    for directory in [dirname(argv[0]),
-                      expanduser('~')]:
+    for directory, filename in product(
+            [dirname(argv[0]),
+             expanduser('~'),
+             env.get('XDG_CONFIG_HOME',
+                     join(expanduser('~'), '.config'))],
+            ['voc.conf',
+             '.voc.conf']):
         try:
-            with open(join(directory, '.voc.conf')) as config:
+            config = join(directory, filename)
+            _LOGGER.debug('checking for config file %s', config)
+            with open(config) as config:
                 return dict(x.split(': ')
                             for x in config.read().strip().splitlines()
                             if not x.startswith('#'))
