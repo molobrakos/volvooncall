@@ -9,29 +9,31 @@ Usage:
   voc [-v|-vv] [options] list
   voc [-v|-vv] [options] status
   voc [-v|-vv] [options] trips
+  voc [-v|-vv] [options] owntracks
   voc [-v|-vv] [options] print [<attribute>]
   voc [-v|-vv] [options] (lock | unlock)
   voc [-v|-vv] [options] heater (start | stop)
   voc [-v|-vv] [options] call <method>
 
 Options:
-  -u <username>     VOC username
-  -p <password>     VOC password
-  -r <region>       VOC region (na, cn, etc.)
-  -s <url>          VOC service URL
-  -i <vin>          Vehicle VIN or registration number
-  -g                Geolocate position
-  -h --help         Show this message
-  -v,-vv            Increase verbosity
-  --version         Show version
+  -u <username>         VOC username
+  -p <password>         VOC password
+  -r <region>           VOC region (na, cn, etc.)
+  -s <url>              VOC service URL
+  -i <vin>              Vehicle VIN or registration number
+  -g                    Geolocate position
+  --owntracks_key=<key> Owntracks encryption password
+  -h --help             Show this message
+  -v,-vv                Increase verbosity
+  --version             Show version
 """
 
 import docopt
 import logging
-from collections import OrderedDict
 from datetime import datetime
-import json
-
+from time import time
+from json import dumps as to_json
+from base64 import b64encode
 from volvooncall import __version__, read_credentials, Connection
 
 _LOGGER = logging.getLogger(__name__)
@@ -55,7 +57,6 @@ def print_vehicle(vehicle, geolocate=False):
             vehicle.distance_to_empty)
 
     print(s)
-
     try:
         lat, lon = (vehicle.position['latitude'],
                     vehicle.position['longitude'])
@@ -71,9 +72,26 @@ def print_vehicle(vehicle, geolocate=False):
     print('    heater: %s' % ('on' if vehicle.is_heater_on else 'off'))
 
 
+def encrypt(msg, key):
+    try:
+        import libnacl
+    except ImportError:
+        exit('libnacl missing')
+    except OSError:
+        exit('libsodium missing')
+    from libnacl import crypto_secretbox_KEYBYTES as keylen
+    from libnacl.secret import SecretBox as secret
+    key = key.encode('utf-8')
+    key = key[:keylen]
+    key = key.ljust(keylen, b'\0')
+    msg = msg.encode('utf-8')
+    ciphertext = secret(key).encrypt(msg)
+    ciphertext = b64encode(ciphertext)
+    ciphertext = ciphertext.decode('ascii')
+    return ciphertext
+
 def main():
     """Command line interface."""
-
     args = docopt.docopt(__doc__,
                          version=__version__)
 
@@ -121,7 +139,7 @@ def main():
     if args['status']:
         print_vehicle(vehicle, args['-g'])
     elif args['trips']:
-        print(json.dumps(vehicle.trips, indent=2))
+        print(to_json(vehicle.trips, indent=4))
     elif args['print']:
         attr = args['<attribute>']
         if attr:
@@ -129,10 +147,27 @@ def main():
                 exit('unknown attribute')
             print(vehicle.data[attr])
         else:
-            def serialize(obj):
-                if isinstance(obj, datetime):
-                    return obj.isoformat()
-            print(json.dumps(OrderedDict(sorted(vehicle.data.items())), indent=2, default=serialize))
+            print(vehicle.json)
+    elif args['owntracks']:
+        def serialize(obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+        msg = to_json(
+            dict(_type='location',
+                 tid='volvo',
+                 t='p',
+                 lat=vehicle.position['latitude'],
+                 lon=vehicle.position['longitude'],
+                 acc=1,
+                 tst=int(time()),
+                 _vehicle=vehicle.data),
+            indent=4, default=serialize)
+        key = args['--owntracks_key'] or credentials.get('owntracks_key')
+        if key:
+            msg = to_json(
+                dict(_type='encrypted',
+                     data=encrypt(msg, key)))
+        print(msg)
     elif args['heater']:
         if args['start']:
             vehicle.start_heater()
