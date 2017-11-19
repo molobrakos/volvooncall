@@ -17,7 +17,7 @@ from collections import OrderedDict
 
 version_info >= (3, 0) or exit('Python 3 required')
 
-__version__ = '0.4.1'
+__version__ = '0.4.2'
 
 _LOGGER = logging.getLogger(__name__)
 
