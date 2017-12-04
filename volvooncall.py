@@ -49,6 +49,8 @@ class Connection(object):
 
     def __init__(self, username, password, service_url=None, region=None, **kwargs):
         """Initialize."""
+        _LOGGER.info('%s version: %s', __name__, __version__)
+
         self._session = Session()
         self._service_url = SERVICE_URL.format(region='-'+region) if region else service_url or DEFAULT_SERVICE_URL
         self._session.headers.update(HEADERS)
