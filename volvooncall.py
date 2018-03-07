@@ -15,7 +15,7 @@ from requests.compat import urljoin
 from json import dumps as to_json
 from collections import OrderedDict
 
-version_info >= (3, 0) or exit('Python 3 required')
+_ = version_info >= (3, 0) or exit('Python 3 required')
 
 __version__ = '0.4.2'
 
@@ -47,12 +47,14 @@ class Connection(object):
 
     """Connection to the VOC server."""
 
-    def __init__(self, username, password, service_url=None, region=None, **kwargs):
+    def __init__(self, username, password,
+                 service_url=None, region=None, **_):
         """Initialize."""
         _LOGGER.info('%s version: %s', __name__, __version__)
 
         self._session = Session()
-        self._service_url = SERVICE_URL.format(region='-'+region) if region else service_url or DEFAULT_SERVICE_URL
+        self._service_url = SERVICE_URL.format(region='-'+region) \
+            if region else service_url or DEFAULT_SERVICE_URL
         self._session.headers.update(HEADERS)
         self._session.auth = (username,
                               password)
@@ -259,6 +261,7 @@ class Vehicle(object):
         return to_json(
             OrderedDict(sorted(self.data.items())),
             indent=4, default=serialize)
+
 
 def read_credentials():
     """Read credentials from file."""
