@@ -35,16 +35,10 @@ from time import time
 from json import dumps as to_json
 from base64 import b64encode
 from collections import OrderedDict
-from volvooncall import __version__, read_credentials, Connection
+from volvooncall import __version__, read_credentials, Connection, json_serialize
 
 _LOGGER = logging.getLogger(__name__)
 
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-
-    if isinstance(obj, (datetime, date)):
-        return obj.isoformat()
-    raise TypeError ("Type %s not serializable" % type(obj))
 
 def lookup_position(lat, lon):
     try:
