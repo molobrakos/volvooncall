@@ -10,10 +10,11 @@ import re
 from os import environ as env
 from os.path import join, dirname, expanduser
 from itertools import product
-from requests import Session, RequestException
-from requests.compat import urljoin
 from json import dumps as to_json
 from collections import OrderedDict
+
+from requests import Session, RequestException
+from requests.compat import urljoin
 
 _ = version_info >= (3, 0) or exit('Python 3 required')
 
@@ -263,6 +264,7 @@ class Vehicle(object):
 
     @property
     def json(self):
+        """Return JSON representation."""
         return to_json(
             OrderedDict(sorted(self.data.items())),
             indent=4, default=json_serialize)
