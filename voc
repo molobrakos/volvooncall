@@ -157,9 +157,6 @@ def main():
         else:
             print(vehicle.json)
     elif args['owntracks']:
-        def serialize(obj):
-            if isinstance(obj, datetime):
-                return obj.isoformat()
         msg = to_json(
             dict(_type='location',
                  tid='volvo',
@@ -169,7 +166,7 @@ def main():
                  acc=1,
                  tst=int(time()),
                  _vehicle=OrderedDict(sorted(vehicle.data.items()))),
-            indent=4, default=serialize)
+            indent=4, default=json_serialize)
         key = args['--owntracks_key'] or credentials.get('owntracks_key')
         if key:
             msg = to_json(
