@@ -43,6 +43,14 @@ def _obj_parser(obj):
     return obj
 
 
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError ("Type %s not serializable" % type(obj))
+
+
 class Connection(object):
 
     """Connection to the VOC server."""
@@ -255,12 +263,9 @@ class Vehicle(object):
 
     @property
     def json(self):
-        def serialize(obj):
-            if isinstance(obj, datetime):
-                return obj.isoformat()
         return to_json(
             OrderedDict(sorted(self.data.items())),
-            indent=4, default=serialize)
+            indent=4, default=json_serialize)
 
 
 def read_credentials():
