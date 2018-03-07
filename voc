@@ -140,7 +140,7 @@ def main():
     if args['status']:
         print_vehicle(vehicle, args['-g'])
     elif args['trips']:
-        print(to_json(vehicle.trips, indent=4, default=json_serial))
+        print(to_json(vehicle.trips, indent=4, default=json_serialize))
     elif args['print']:
         attr = args['<attribute>']
         if attr:
