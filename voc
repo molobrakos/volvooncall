@@ -30,7 +30,6 @@ Options:
 
 import docopt
 import logging
-from datetime import date, datetime
 from time import time
 from json import dumps as to_json
 from base64 import b64encode
