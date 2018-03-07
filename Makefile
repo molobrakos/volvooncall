@@ -9,7 +9,7 @@ clean:
 
 lint:
 	flake8
-	pylint volvooncall
+	pylint3 volvooncall
 	pydocstyle volvooncall
 
 test:
