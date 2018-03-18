@@ -12,6 +12,7 @@ from os.path import join, dirname, expanduser
 from itertools import product
 from json import dumps as to_json
 from collections import OrderedDict
+from base64 import b64encode
 
 from requests import Session, RequestException
 from requests.compat import urljoin
@@ -50,6 +51,25 @@ def json_serialize(obj):
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
     raise TypeError("Type %s not serializable" % type(obj))
+
+
+def owntracks_encrypt(msg, key):
+    try:
+        import libnacl
+    except ImportError:
+        exit('libnacl missing')
+    except OSError:
+        exit('libsodium missing')
+    from libnacl import crypto_secretbox_KEYBYTES as keylen
+    from libnacl.secret import SecretBox as secret
+    key = key.encode('utf-8')
+    key = key[:keylen]
+    key = key.ljust(keylen, b'\0')
+    msg = msg.encode('utf-8')
+    ciphertext = secret(key).encrypt(msg)
+    ciphertext = b64encode(ciphertext)
+    ciphertext = ciphertext.decode('ascii')
+    return ciphertext
 
 
 class Connection(object):
@@ -128,8 +148,7 @@ class Connection(object):
     def vehicle(self, vin):
         """Return vehicle for given vin."""
         return next((vehicle for vehicle in self.vehicles
-                     if vehicle.vin.lower() == vin.lower() or
-                     vehicle.registration_number.lower() == vin.lower()), None)
+                     if vehicle.unique_id == vin.lower()), None)
 
 
 def camel2slug(data):
@@ -151,6 +170,11 @@ class Vehicle(object):
                 setattr(self, key, val)
         self._connection = conn
         self._url = url
+
+    @property
+    def unique_id(self):
+        return (self.registration_number.lower() or
+                self.vin.lower())
 
     def get(self, query):
         """Perform a query to the online service."""
