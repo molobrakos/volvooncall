@@ -255,7 +255,7 @@ class Lock(Entity):
     @property
     def discovery_payload(self):
         return dict(super().discovery_payload,
-                    command_topic=f'{self.topic}/cmd')
+                    command_topic=f'{self.topic}/set')
 
 class Switch(Entity):
     def __init__(self, attr, name, icon=None):
@@ -265,7 +265,8 @@ class Switch(Entity):
     @property
     def discovery_payload(self):
         return dict(super().discovery_payload,
-                    command_topic=f'{self.topic}/cmd', icon=self.icon)
+                    command_topic=f'{self.topic}/set',
+                    icon=self.icon)
     
 class Heater(Switch):
     def __init__(self):
