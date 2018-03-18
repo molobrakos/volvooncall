@@ -145,7 +145,7 @@ class Entity:
         return f'{self.topic}/avail'
     
     def publish_discovery(self, mqtt):
-        self.publish(mqtt, self.discovery_topic, self.discovery_payload, retain=True)
+        self.publish(mqtt, self.discovery_topic, self.discovery_payload)
 
     def publish_availability(self, mqtt, available):
         self.publish(mqtt, self.availability_topic,
