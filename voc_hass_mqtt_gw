@@ -401,11 +401,9 @@ def main():
     available = True
     interval = int(args['-i'])
 
-    for vehicle in voc.vehicles:
-        push_config(vehicle, mqtt, config)
-
     while True:
         for vehicle in voc.vehicles:
+            push_config(vehicle, mqtt, config)
             push_state(vehicle, mqtt, config, available)
         sleep(interval)
         available = voc.update()
