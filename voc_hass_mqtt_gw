@@ -350,7 +350,7 @@ def main():
     elif args['-v']:
         log_level=logging.INFO
     else:
-        log_evel=logging.ERROR
+        log_level=logging.ERROR
 
     try:
         import coloredlogs
