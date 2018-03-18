@@ -32,9 +32,8 @@ import docopt
 import logging
 from time import time
 from json import dumps as to_json
-from base64 import b64encode
 from collections import OrderedDict
-from volvooncall import __version__, read_credentials, Connection, json_serialize
+from volvooncall import (__version__, read_credentials, Connection, json_serialize, owntracks_encrypt)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,24 +71,6 @@ def print_vehicle(vehicle, geolocate=False):
     print('    locked: %s' % ('yes' if vehicle.is_locked else 'no'))
     print('    heater: %s' % ('on' if vehicle.is_heater_on else 'off'))
 
-
-def encrypt(msg, key):
-    try:
-        import libnacl
-    except ImportError:
-        exit('libnacl missing')
-    except OSError:
-        exit('libsodium missing')
-    from libnacl import crypto_secretbox_KEYBYTES as keylen
-    from libnacl.secret import SecretBox as secret
-    key = key.encode('utf-8')
-    key = key[:keylen]
-    key = key.ljust(keylen, b'\0')
-    msg = msg.encode('utf-8')
-    ciphertext = secret(key).encrypt(msg)
-    ciphertext = b64encode(ciphertext)
-    ciphertext = ciphertext.decode('ascii')
-    return ciphertext
 
 def main():
     """Command line interface."""
@@ -164,7 +145,7 @@ def main():
         if key:
             msg = to_json(
                 dict(_type='encrypted',
-                     data=encrypt(msg, key)))
+                     data=owntracks_encrypt(msg, key)))
         print(msg)
     elif args['heater']:
         if args['start']:
