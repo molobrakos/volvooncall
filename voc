@@ -34,10 +34,14 @@ import docopt
 import logging
 from time import time
 from json import dumps as to_json
+from sys import stderr
 from collections import OrderedDict
 from volvooncall import (__version__, read_credentials, Connection, json_serialize, owntracks_encrypt)
 
 _LOGGER = logging.getLogger(__name__)
+
+LOGFMT = "%(asctime)s %(levelname)5s (%(threadName)s) [%(name)s] %(message)s"
+DATEFMT = "%y-%m-%d %H:%M.%S"
 
 
 def lookup_position(lat, lon):
