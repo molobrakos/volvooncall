@@ -78,14 +78,24 @@ def main():
                          version=__version__)
 
     if args['-v'] == 2:
-        level=logging.DEBUG
+        log_level=logging.DEBUG
     elif args['-v']:
-        level=logging.INFO
+        log_level=logging.INFO
     else:
-        level=logging.ERROR
+        log_level=logging.ERROR
 
-    FORMAT = '%(asctime)s %(name)s: %(message)s'
-    logging.basicConfig(level=level, format=FORMAT, datefmt='%H:%M:%S')
+    try:
+        import coloredlogs
+        coloredlogs.install(level=log_level,
+                            stream=stderr,
+                            datefmt=DATEFMT,
+                            fmt=LOGFMT)
+    except ImportError:
+        _LOGGER.debug("no colored logs. pip install coloredlogs?")
+        logging.basicConfig(level=log_level,
+                            stream=stderr,
+                            datefmt=DATEFMT,
+                            format=LOGFMT)
 
     credentials = read_credentials()
 
