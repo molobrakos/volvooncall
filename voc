@@ -14,6 +14,7 @@ Usage:
   voc [-v|-vv] [options] (lock | unlock)
   voc [-v|-vv] [options] heater (start | stop)
   voc [-v|-vv] [options] call <method>
+  voc [-v|-vv] [options] mqtt
 
 Options:
   -u <username>         VOC username
@@ -23,6 +24,7 @@ Options:
   -i <vin>              Vehicle VIN or registration number
   -g                    Geolocate position
   --owntracks_key=<key> Owntracks encryption password
+  -I <interval>         Polling interval (seconds) [default: 60]
   -h --help             Show this message
   -v,-vv                Increase verbosity
   --version             Show version
@@ -168,7 +170,8 @@ def main():
         vehicle.unlock()
     elif args['call']:
         vehicle.call(args['<method>'])
-
+    elif args['mqtt']:
+        import mqtt
 
 if __name__ == '__main__':
    main()
