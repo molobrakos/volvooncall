@@ -6,7 +6,7 @@ from time import time
 from json import dumps as dump_json
 from base64 import b64encode
 from collections import OrderedDict
-from volvooncall import (__version__, read_credentials, Connection, json_serialize, owntracks_encrypt)
+from volvooncall import Connection
 from os.path import join, expanduser
 from os import environ as env
 from requests import certs
@@ -318,7 +318,9 @@ def push_state(vehicle, mqtt, config, available):
             entity.publish_state(mqtt)
 
             
-def run(voc_config):
+def run(voc, voc_config):
+
+    # FIXME: Allow MQTT credentials in voc.conf
 
     config = read_mqtt_config()
     mqtt = paho.Client()
@@ -335,26 +337,9 @@ def run(voc_config):
                  port=int(config['port']))
     mqtt.loop_start()
 
-    config = read_credentials()
-    for (key, arg) in dict(
-            username='-u',
-            password='-p',
-            region='-r',
-            service_url='-s',
-            owntracks_key='--owntracks_key',
-            scandinavian_miles='--scandinavian_miles').items():
-        if args[arg]:
-            config[key] = args[arg]
-
-    try:
-        voc = Connection(**config)
-    except TypeError:
-        exit('Could not read config and none supplied.')
-
-    voc.update() or exit('Could not connect to the VOC server.')
-
     available = True
-    interval = int(args['-i'])
+    interval = int(voc_config['interval'])
+    _LOGGER.info(f'Polling every {interval} seconds')
 
     while True:
         for vehicle in voc.vehicles:

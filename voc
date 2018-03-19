@@ -27,6 +27,7 @@ Options:
   -I <interval>         Polling interval (seconds) [default: 60]
   -h --help             Show this message
   -v,-vv                Increase verbosity
+  --scandinavian_miles  Report using Scandinavian miles instead of km ISO unit
   --version             Show version
 """
 
@@ -112,14 +113,18 @@ def main():
         credentials.update(region = args['-r'])
     if args['-s']:
         credentials.update(service_url = args['-s'])
+    if args['-I']:
+        credentials.update(interval = args['-I'])
+    if args['--scandinavian_miles']:
+        credentials.update(
+            scandinavian_miles = args['--scandinavian_miles'])
 
     try:
         connection = Connection(**credentials)
     except TypeError:
         exit('Could not read credentials and none supplied.')
 
-    if not connection.update():
-        exit('Could not connect to the server.')
+    connection.update() or exit('Could not connect to the server.')
 
     if args['list']:
         for vehicle in connection.vehicles:
@@ -176,7 +181,7 @@ def main():
         vehicle.call(args['<method>'])
     elif args['mqtt']:
         from mqtt import run
-        run(credentials)
+        run(connection, credentials)
 
 
 if __name__ == '__main__':
