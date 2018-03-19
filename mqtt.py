@@ -346,26 +346,6 @@ def main():
     args = docopt.docopt(__doc__,
                          version=__version__)
 
-    if args['-v'] == 2:
-        log_level=logging.DEBUG
-    elif args['-v']:
-        log_level=logging.INFO
-    else:
-        log_level=logging.ERROR
-
-    try:
-        import coloredlogs
-        coloredlogs.install(level=log_level,
-                            stream=stderr,
-                            datefmt=DATEFMT,
-                            fmt=LOGFMT)
-    except ImportError:
-        _LOGGER.debug("no colored logs. pip install coloredlogs?")
-        logging.basicConfig(level=log_level,
-                            stream=stderr,
-                            datefmt=DATEFMT,
-                            format=LOGFMT)
-
     config = read_mqtt_config()
     mqtt = paho.Client()
     mqtt.username_pw_set(username=config['username'],
