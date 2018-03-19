@@ -171,7 +171,9 @@ def main():
     elif args['call']:
         vehicle.call(args['<method>'])
     elif args['mqtt']:
-        import mqtt
+        from mqtt import run
+        run(credentials)
+
 
 if __name__ == '__main__':
    main()

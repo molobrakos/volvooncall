@@ -1,26 +1,6 @@
 #!/usr/bin/env python3
 # -*- mode: python; coding: utf-8 -*-
-"""
-Gateway to Home Assistant using MQTT
 
-Usage: 
-  voc_hass_mqtt_gw [-v|-vv] [--scandinavian_miles] [options]
-  voc_hass_mqtt_gw (-h | --help)
-  voc_hass_mqtt_gw --version
-
-Options:
-  -u <username>         VOC username
-  -p <password>         VOC password
-  -r <region>           VOC region (na, cn, etc.)
-  -s <url>              VOC service URL
-  -i <interval>         Polling interval (seconds) [default: 60]
-  --owntracks_key=<key> Owntracks encryption password
-  -h --help             Show this message
-  -v,-vv                Increase verbosity
-  --version             Show version
-"""
-
-import docopt
 import logging
 from time import time
 from json import dumps as dump_json
@@ -39,9 +19,6 @@ import paho.mqtt.client as paho
 
 
 _LOGGER = logging.getLogger(__name__)
-
-LOGFMT = "%(asctime)s %(levelname)5s (%(threadName)s) [%(name)s] %(message)s"
-DATEFMT = "%y-%m-%d %H:%M.%S"
 
 
 def read_mqtt_config():
@@ -341,10 +318,7 @@ def push_state(vehicle, mqtt, config, available):
             entity.publish_state(mqtt)
 
             
-def main():
-    """Command line interface."""
-    args = docopt.docopt(__doc__,
-                         version=__version__)
+def run(voc_config):
 
     config = read_mqtt_config()
     mqtt = paho.Client()
