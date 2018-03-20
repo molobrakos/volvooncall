@@ -223,7 +223,7 @@ class Windows(AnyOpen):
         
 class Lock(Entity):
     def __init__(self):
-        super().__init__('lock', 'lock', 'Lock')
+        super().__init__('lock', 'lock', 'Door lock')
 
     @property
     def state(self):
@@ -247,7 +247,7 @@ class Switch(Entity):
     
 class Heater(Switch):
     def __init__(self):
-        super().__init__('switch', 'heater', 'mdi:radiator')
+        super().__init__('heater', 'Heater', 'mdi:radiator')
 
     @property
     def state(self):
