@@ -115,6 +115,9 @@ def main():
         credentials.update(service_url = args['-s'])
     if args['-I']:
         credentials.update(interval = args['-I'])
+    if args['--owntracks_key']:
+        credentials.update(
+            owntracks_key = args['--owntracks_key'])
     if args['--scandinavian_miles']:
         credentials.update(
             scandinavian_miles = args['--scandinavian_miles'])
@@ -162,7 +165,7 @@ def main():
                  tst=int(time()),
                  _vehicle=OrderedDict(sorted(vehicle.data.items()))),
             indent=4, default=json_serialize)
-        key = args['--owntracks_key'] or credentials.get('owntracks_key')
+        key = credentials.get('owntracks_key')
         if key:
             msg = to_json(
                 dict(_type='encrypted',
