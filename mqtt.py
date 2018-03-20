@@ -303,7 +303,8 @@ entities = [
 ]
 
 def push_config(vehicle, mqtt, config):
-
+    from pprint import pprint
+    pprint(config)
     for entity in entities:
         if not entity.setup(vehicle, config):
             continue
@@ -318,14 +319,14 @@ def push_state(vehicle, mqtt, config, available):
             entity.publish_state(mqtt)
 
             
-def run(voc, voc_config):
+def run(voc, config):
 
     # FIXME: Allow MQTT credentials in voc.conf
 
-    config = read_mqtt_config()
+    mqtt_config = read_mqtt_config()
     mqtt = paho.Client()
-    mqtt.username_pw_set(username=config['username'],
-                         password=config['password'])
+    mqtt.username_pw_set(username=mqtt_config['username'],
+                         password=mqtt_config['password'])
     mqtt.tls_set(certs.where())
 
     mqtt.on_connect = on_connect
@@ -333,12 +334,12 @@ def run(voc, voc_config):
     mqtt.on_publish = on_publish
     mqtt.on_message = on_message
     
-    mqtt.connect(host=config['host'],
-                 port=int(config['port']))
+    mqtt.connect(host=mqtt_config['host'],
+                 port=int(mqtt_config['port']))
     mqtt.loop_start()
 
     available = True
-    interval = int(voc_config['interval'])
+    interval = int(config['interval'])
     _LOGGER.info(f'Polling every {interval} seconds')
 
     while True:
