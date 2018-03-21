@@ -55,21 +55,20 @@ def json_serialize(obj):
 
 def owntracks_encrypt(msg, key):
     try:
-        import libnacl
+        from libnacl import crypto_secretbox_KEYBYTES as keylen
+        from libnacl.secret import SecretBox as secret
+        key = key.encode('utf-8')
+        key = key[:keylen]
+        key = key.ljust(keylen, b'\0')
+        msg = msg.encode('utf-8')
+        ciphertext = secret(key).encrypt(msg)
+        ciphertext = b64encode(ciphertext)
+        ciphertext = ciphertext.decode('ascii')
+        return ciphertext
     except ImportError:
         exit('libnacl missing')
     except OSError:
         exit('libsodium missing')
-    from libnacl import crypto_secretbox_KEYBYTES as keylen
-    from libnacl.secret import SecretBox as secret
-    key = key.encode('utf-8')
-    key = key[:keylen]
-    key = key.ljust(keylen, b'\0')
-    msg = msg.encode('utf-8')
-    ciphertext = secret(key).encrypt(msg)
-    ciphertext = b64encode(ciphertext)
-    ciphertext = ciphertext.decode('ascii')
-    return ciphertext
 
 
 class Connection(object):
