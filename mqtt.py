@@ -4,19 +4,13 @@
 import logging
 from time import time
 from json import dumps as dump_json
-from base64 import b64encode
-from collections import OrderedDict
-from volvooncall import Connection
 from os.path import join, expanduser
 from os import environ as env
 from requests import certs
 from threading import current_thread
 from time import sleep
-from types import SimpleNamespace as ns
-from math import floor
-from sys import stderr
 import paho.mqtt.client as paho
-
+from volvooncall import owntracks_encrypt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +20,8 @@ def read_mqtt_config():
     with open(join(env.get('XDG_CONFIG_HOME',
                            join(expanduser('~'), '.config')),
                    'mosquitto_pub')) as f:
-        d = dict(line.replace('-', '').split() for line in f.read().splitlines())
+        d = dict(line.replace('-', '').split()
+                 for line in f.read().splitlines())
         return dict(host=d['h'],
                     port=d['p'],
                     username=d['username'],
@@ -37,11 +32,14 @@ def on_connect(client, userdata, flags, rc):
     current_thread().setName('MQTTThread')
     _LOGGER.info('Connected')
 
+
 def on_publish(client, userdata, mid):
     _LOGGER.info('Published')
 
+
 def on_disconnect(client, userdata, rc):
     _LOGGER.warning('Disconnected')
+
 
 def on_message(client, userdata, message):
     _LOGGER.info('Got %s', message)
@@ -50,6 +48,7 @@ def on_message(client, userdata, message):
         entity.command(message.payload)
     else:
         _LOGGER.warning(f'Unknown recipient for {message.topic}')
+
 
 class Entity:
 
@@ -66,10 +65,10 @@ class Entity:
         self.vehicle = vehicle
         self.config = config
         return self.supported
-        
+
     def __str__(self):
         return f'{self.entity_name}'
-        
+
     @property
     def vehicle_name(self):
         return self.vehicle.registration_number or self.vehicle.vin
@@ -77,7 +76,7 @@ class Entity:
     @property
     def entity_name(self):
         return f'{self.vehicle_name} {self.name}'
-    
+
     @property
     def supported(self):
         return getattr(self.vehicle, self.attr + '_supported', True)
@@ -142,7 +141,7 @@ class Entity:
         else:
             _LOGGER.warning(f'No state available for {self}')
 
-        
+
 class Sensor(Entity):
     def __init__(self, attr, name, icon, unit):
         super().__init__('sensor', attr, name)
@@ -155,10 +154,12 @@ class Sensor(Entity):
             else 'L/mil' if self.attr == 'average_fuel_consumption'
             else self.unit.replace('km', 'mil'))
         return super().setup(vehicle, config)
-        
+
     @property
     def discovery_payload(self):
-        return dict(super().discovery_payload, icon=self.icon, unit_of_measurement=self.unit)
+        return dict(super().discovery_payload,
+                    icon=self.icon,
+                    unit_of_measurement=self.unit)
 
     @property
     def state(self):
@@ -166,23 +167,32 @@ class Sensor(Entity):
         return (val / 10
                 if val and 'mil' in self.unit
                 else val)
-        
+
+
 class FuelConsumption(Sensor):
 
     def __init__(self):
-        super().__init__('average_fuel_consumption', 'Fuel consumption', 'mdi:gas-station', 'L/100 km')
+        super().__init__(attr='average_fuel_consumption',
+                         name='Fuel consumption',
+                         icon='mdi:gas-station',
+                         unit='L/100 km')
 
     def setup(self, vehicle, config):
-        self.unit = self.unit.replace('100 km', 'mil') if 'scandinavian_miles' in config else self.unit
+        self.unit = (self.unit.replace('100 km', 'mil')
+                     if 'scandinavian_miles' in config
+                     else self.unit)
         return super().setup(vehicle, config)
 
     @property
     def state(self):
         val = super().state
-        return (round(val / 10, 2 if 'mil' in self.unit else 1) # L/1000km -> L/100km
+        return (round(val / 10, 2
+                      if 'mil' in self.unit
+                      else 1)  # L/1000km -> L/100km
                 if val
                 else None)
-                
+
+
 class Odometer(Sensor):
 
     def __init__(self):
@@ -190,14 +200,15 @@ class Odometer(Sensor):
                          name='Odometer',
                          icon='mdi:speedometer',
                          unit='km')
-                     
+
     @property
     def state(self):
         val = super().state
         return (int(round(val / 1000))  # m->km
                 if val
-                else None) 
-    
+                else None)
+
+
 class BinarySensor(Entity):
     def __init__(self, attr, name, device_class):
         super().__init__('binary_sensor', attr, name)
@@ -215,9 +226,11 @@ class BinarySensor(Entity):
         else:
             return 'ON' if val != 'Normal' else 'OFF'
 
+
 class AnyOpen(BinarySensor):
     def __init__(self, attr, name, device_class):
         super().__init__(attr, name, device_class)
+
     @property
     def state(self):
         state = super().state
@@ -225,19 +238,22 @@ class AnyOpen(BinarySensor):
                              for key in state
                              if 'Open' in key])
                 else 'OFF')
-    
+
+
 class Doors(AnyOpen):
     def __init__(self):
         super().__init__(attr='doors',
                          name='Doors',
                          device_class='door')
 
+
 class Windows(AnyOpen):
     def __init__(self):
         super().__init__(attr='windows',
                          name='Windows',
                          device_class='window')
-        
+
+
 class Lock(Entity):
     def __init__(self):
         super().__init__(component='lock',
@@ -248,7 +264,7 @@ class Lock(Entity):
     def state(self):
         return ('LOCK' if self.vehicle.is_locked
                 else 'UNLOCK')
-        
+
     @property
     def discovery_payload(self):
         return dict(super().discovery_payload,
@@ -275,7 +291,8 @@ class Switch(Entity):
         return dict(super().discovery_payload,
                     command_topic=f'{self.topic}/set',
                     icon=self.icon)
-    
+
+
 class Heater(Switch):
     def __init__(self):
         super().__init__(attr='heater',
@@ -305,7 +322,7 @@ class Position(Entity):
 
     def publish_discovery(self, mqtt):
         pass
-    
+
     def publish_availability(self, mqtt, available):
         pass
 
@@ -323,8 +340,9 @@ class Position(Entity):
                    lon=self.vehicle.position['longitude'],
                    acc=1,
                    tst=int(time()))
-        return dict(_type='encrypted',
-                    data=owntracks_encrypt(dump_json(res), key)) if key else res
+        return (dict(_type='encrypted',
+                     data=owntracks_encrypt(dump_json(res), key))
+                if key else res)
 
 
 entities = [
@@ -347,8 +365,7 @@ entities = [
            unit='km'),
     BinarySensor(attr='washer_fluid_level',
                  name='Washer fluid',
-                 device_class=
-                 'safety'),
+                 device_class='safety'),
     BinarySensor(attr='brake_fluid',
                  name='Brake Fluid',
                  device_class='safety'),
@@ -362,6 +379,7 @@ entities = [
     Windows()
 ]
 
+
 def push_state(vehicle, mqtt, config, available):
     for entity in entities:
         if not entity.setup(vehicle, config):
@@ -371,7 +389,7 @@ def push_state(vehicle, mqtt, config, available):
         if available:
             entity.publish_state(mqtt)
 
-            
+
 def run(voc, config):
 
     # FIXME: Allow MQTT credentials in voc.conf
@@ -386,7 +404,7 @@ def run(voc, config):
     mqtt.on_disconnect = on_disconnect
     mqtt.on_publish = on_publish
     mqtt.on_message = on_message
-    
+
     mqtt.connect(host=mqtt_config['host'],
                  port=int(mqtt_config['port']))
     mqtt.loop_start()
@@ -399,7 +417,3 @@ def run(voc, config):
         for vehicle in voc.vehicles:
             push_state(vehicle, mqtt, config, available)
         sleep(interval)
-
-
-if __name__ == '__main__':
-   main()
