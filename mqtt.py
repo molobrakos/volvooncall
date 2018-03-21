@@ -302,18 +302,11 @@ entities = [
     Windows()
 ]
 
-def push_config(vehicle, mqtt, config):
-    from pprint import pprint
-    pprint(config)
-    for entity in entities:
-        if not entity.setup(vehicle, config):
-            continue
-        entity.publish_discovery(mqtt)
-        
 def push_state(vehicle, mqtt, config, available):
     for entity in entities:
         if not entity.setup(vehicle, config):
             continue
+        entity.publish_discovery(mqtt)
         entity.publish_availability(mqtt, available)
         if available:
             entity.publish_state(mqtt)
@@ -338,17 +331,15 @@ def run(voc, config):
                  port=int(mqtt_config['port']))
     mqtt.loop_start()
 
-    available = True
     interval = int(config['interval'])
     _LOGGER.info(f'Polling every {interval} seconds')
 
     while True:
+        available = voc.update()
         for vehicle in voc.vehicles:
-            push_config(vehicle, mqtt, config)
             push_state(vehicle, mqtt, config, available)
         sleep(interval)
-        available = voc.update()
-        
+
 
 if __name__ == '__main__':
    main()
