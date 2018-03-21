@@ -45,7 +45,6 @@ def on_disconnect(client, userdata, rc):
 
 def on_message(client, userdata, message):
     _LOGGER.info('Got %s', message)
-    # FIXME: Command topic does not make sense for all devices
     entity = Entity.subscriptions.get(message.topic)
     if entity:
         entity.command(message.payload)
