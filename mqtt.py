@@ -186,7 +186,10 @@ class FuelConsumption(Sensor):
 class Odometer(Sensor):
 
     def __init__(self):
-        super().__init__('odometer', 'Odometer', 'mdi:speedometer', 'km')
+        super().__init__(attr='odometer',
+                         name='Odometer',
+                         icon='mdi:speedometer',
+                         unit='km')
                      
     @property
     def state(self):
@@ -218,23 +221,33 @@ class AnyOpen(BinarySensor):
     @property
     def state(self):
         state = super().state
-        return 'ON' if any([state[key] for key in state if 'Open' in key]) else 'OFF'
-
+        return ('ON' if any([state[key]
+                             for key in state
+                             if 'Open' in key])
+                else 'OFF')
+    
 class Doors(AnyOpen):
     def __init__(self):
-        super().__init__('doors', 'Doors', 'door')
+        super().__init__(attr='doors',
+                         name='Doors',
+                         device_class='door')
 
 class Windows(AnyOpen):
     def __init__(self):
-        super().__init__('windows', 'Windows', 'window')
+        super().__init__(attr='windows',
+                         name='Windows',
+                         device_class='window')
         
 class Lock(Entity):
     def __init__(self):
-        super().__init__('lock', 'lock', 'Door lock')
+        super().__init__(component='lock',
+                         attr='lock',
+                         name='Door lock')
 
     @property
     def state(self):
-        return 'LOCK' if self.vehicle.is_locked else 'UNLOCK'
+        return ('LOCK' if self.vehicle.is_locked
+                else 'UNLOCK')
         
     @property
     def discovery_payload(self):
@@ -252,7 +265,9 @@ class Lock(Entity):
 
 class Switch(Entity):
     def __init__(self, attr, name, icon=None):
-        super().__init__('switch', attr, name)
+        super().__init__(component='switch',
+                         attr=attr,
+                         name=name)
         self.icon = icon
 
     @property
@@ -263,7 +278,9 @@ class Switch(Entity):
     
 class Heater(Switch):
     def __init__(self):
-        super().__init__('heater', 'Heater', 'mdi:radiator')
+        super().__init__(attr='heater',
+                         name='Heater',
+                         icon='mdi:radiator')
 
     @property
     def state(self):
@@ -315,14 +332,32 @@ entities = [
     Lock(),
     Heater(),
     Odometer(),
-    Sensor('fuel_amount', 'Fuel amount', 'mdi:gas-station', 'L'),
-    Sensor('fuel_amount_level', 'Fuel level', 'mdi:water-percent', '%'),
+    Sensor(attr='fuel_amount',
+           name='Fuel amount',
+           icon='mdi:gas-station',
+           unit='L'),
+    Sensor(attr='fuel_amount_level',
+           name='Fuel level',
+           icon='mdi:water-percent',
+           unit='%'),
     FuelConsumption(),
-    Sensor('distance_to_empty', 'Range', 'mdi:ruler', 'km'),
-    BinarySensor('washer_fluid_level', 'Washer fluid', 'safety'),
-    BinarySensor('brake_fluid', 'Brake Fluid', 'safety'),
-    BinarySensor('service_warning_status', 'Service', 'safety'),
-    BinarySensor('bulb_failures', 'Bulbs', 'safety'),
+    Sensor(attr='distance_to_empty',
+           name='Range',
+           icon='mdi:ruler',
+           unit='km'),
+    BinarySensor(attr='washer_fluid_level',
+                 name='Washer fluid',
+                 device_class=
+                 'safety'),
+    BinarySensor(attr='brake_fluid',
+                 name='Brake Fluid',
+                 device_class='safety'),
+    BinarySensor(attr='service_warning_status',
+                 name='Service',
+                 device_class='safety'),
+    BinarySensor(attr='bulb_failures',
+                 name='Bulbs',
+                 device_class='safety'),
     Doors(),
     Windows()
 ]
