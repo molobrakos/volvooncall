@@ -36,7 +36,6 @@ def read_mqtt_config():
 def on_connect(client, userdata, flags, rc):
     current_thread().setName('MQTTThread')
     _LOGGER.info('Connected')
-    client.subscribe("{prefix}/+/+/+/cmd")
 
 def on_publish(client, userdata, mid):
     _LOGGER.info('Published')
@@ -46,21 +45,17 @@ def on_disconnect(client, userdata, rc):
 
 def on_message(client, userdata, message):
     _LOGGER.info('Got %s', message)
-    # FIXME: Lookup entity and vehicle and execute command
-
-    #if args['heater']:
-    #    if args['start']:
-    #        vehicle.start_heater()
-    #    else:
-    #        vehicle.stop_heater()
-    #elif args['lock']:
-    #    vehicle.lock()
-    #elif args['unlock']:
-    #    vehicle.unlock()
-    #elif args['call']:
-    #    vehicle.call(args['<method>'])
+    # FIXME: Command topic does not make sense for all devices
+    entity = Entity.subscriptions.get(message.topic)
+    if entity:
+        entity.command(message.payload)
+    else:
+        _LOGGER.warning(f'Unknown recipient for {message.topic}')
 
 class Entity:
+
+    subscriptions = {}
+
     def __init__(self, component, attr, name):
         self.attr = attr
         self.component = component
@@ -98,7 +93,8 @@ class Entity:
     def discovery_payload(self):
         return dict(name=self.entity_name,
                     state_topic=self.state_topic,
-                    availability_topic=self.availability_topic)
+                    availability_topic=self.availability_topic,
+                    command_topic=self.command_topic)
 
     def publish(self, mqtt, topic, payload, retain=False):
         payload = dump_json(payload) if isinstance(payload, dict) else payload
@@ -120,8 +116,20 @@ class Entity:
     @property
     def availability_topic(self):
         return f'{self.topic}/avail'
-    
+
+    @property
+    def command_topic(self):
+        return f'{self.topic}/cmd'
+
+    def subscribe(self, mqtt):
+        mqtt.subscribe(self.command_topic)
+        Entity.subscriptions[self.command_topic] = self
+
+    def command(self, command):
+        _LOGGER.warning(f'No command to execute for {self}: {command}')
+
     def publish_discovery(self, mqtt):
+        self.subscribe(mqtt)
         self.publish(mqtt, self.discovery_topic, self.discovery_payload)
 
     def publish_availability(self, mqtt, available):
@@ -234,6 +242,15 @@ class Lock(Entity):
         return dict(super().discovery_payload,
                     command_topic=f'{self.topic}/set')
 
+    def command(self, command):
+        if command == 'lock':
+            self.vehichle.lock()
+        elif command == 'unlock':
+            self.vehichle.unlock()
+        else:
+            _LOGGER.warning(f'Unknown command: {command}')
+
+
 class Switch(Entity):
     def __init__(self, attr, name, icon=None):
         super().__init__('switch', attr, name)
@@ -252,7 +269,16 @@ class Heater(Switch):
     @property
     def state(self):
         return 'ON' if self.vehicle.is_heater_on else 'OFF'
-        
+
+    def command(self, command):
+        if command == 'on':
+            self.vehichle.start_heater()
+        elif command == 'off':
+            self.vehichle.stop_heater()
+        else:
+            _LOGGER.warning(f'Unknown command: {command}')
+
+
 class Position(Entity):
     def __init__(self):
         super().__init__(None, None, None)
