@@ -97,7 +97,7 @@ class Entity:
     def publish(self, mqtt, topic, payload, retain=False):
         payload = dump_json(payload) if isinstance(payload, dict) else payload
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
-        mqtt.publish(topic, payload, retain=True)
+        mqtt.publish(topic, payload, retain=retain)
 
     @property
     def state(self):
@@ -128,7 +128,7 @@ class Entity:
 
     def publish_discovery(self, mqtt):
         self.subscribe(mqtt)
-        self.publish(mqtt, self.discovery_topic, self.discovery_payload)
+        self.publish(mqtt, self.discovery_topic, self.discovery_payload, retain=True)
 
     def publish_availability(self, mqtt, available):
         self.publish(mqtt, self.availability_topic,
@@ -345,49 +345,40 @@ class Position(Entity):
                 if key else res)
 
 
-entities = [
-    Position(),
-    Lock(),
-    Heater(),
-    Odometer(),
-    Sensor(attr='fuel_amount',
-           name='Fuel amount',
-           icon='mdi:gas-station',
-           unit='L'),
-    Sensor(attr='fuel_amount_level',
-           name='Fuel level',
-           icon='mdi:water-percent',
-           unit='%'),
-    FuelConsumption(),
-    Sensor(attr='distance_to_empty',
-           name='Range',
-           icon='mdi:ruler',
-           unit='km'),
-    BinarySensor(attr='washer_fluid_level',
-                 name='Washer fluid',
-                 device_class='safety'),
-    BinarySensor(attr='brake_fluid',
-                 name='Brake Fluid',
-                 device_class='safety'),
-    BinarySensor(attr='service_warning_status',
-                 name='Service',
-                 device_class='safety'),
-    BinarySensor(attr='bulb_failures',
-                 name='Bulbs',
-                 device_class='safety'),
-    Doors(),
-    Windows()
-]
-
-
-def push_state(vehicle, mqtt, config, available):
-    for entity in entities:
-        if not entity.setup(vehicle, config):
-            continue
-        entity.publish_discovery(mqtt)
-        entity.publish_availability(mqtt, available)
-        if available:
-            entity.publish_state(mqtt)
+def create_entities(vehicle, config):
+    return [entity for entity in [
+        Position(),
+        Lock(),
+        Heater(),
+        Odometer(),
+        Sensor(attr='fuel_amount',
+               name='Fuel amount',
+               icon='mdi:gas-station',
+               unit='L'),
+        Sensor(attr='fuel_amount_level',
+               name='Fuel level',
+               icon='mdi:water-percent',
+               unit='%'),
+        FuelConsumption(),
+        Sensor(attr='distance_to_empty',
+               name='Range',
+               icon='mdi:ruler',
+               unit='km'),
+        BinarySensor(attr='washer_fluid_level',
+                     name='Washer fluid',
+                     device_class='safety'),
+        BinarySensor(attr='brake_fluid',
+                     name='Brake Fluid',
+                     device_class='safety'),
+        BinarySensor(attr='service_warning_status',
+                     name='Service',
+                     device_class='safety'),
+        BinarySensor(attr='bulb_failures',
+                     name='Bulbs',
+                     device_class='safety'),
+        Doors(),
+        Windows()
+    ] if entity.setup(vehicle, config)]
 
 
 def run(voc, config):
@@ -412,8 +403,21 @@ def run(voc, config):
     interval = int(config['interval'])
     _LOGGER.info(f'Polling every {interval} seconds')
 
+    entities = {}
+
     while True:
         available = voc.update()
         for vehicle in voc.vehicles:
-            push_state(vehicle, mqtt, config, available)
+            if vehicle not in entities:
+                _LOGGER.debug('creating vehicle %s', vehicle)
+                entities[vehicle] = create_entities(vehicle, config)
+
+                for entity in entities[vehicle]:
+                    entity.publish_discovery(mqtt)
+
+            for entity in entities[vehicle]:
+                entity.publish_availability(mqtt, available)
+                if available:
+                    entity.publish_state(mqtt)
+
         sleep(interval)
