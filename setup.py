@@ -12,9 +12,8 @@ setup(name="volvooncall",
       scripts=["voc"],
       py_modules=["volvooncall"],
       provides=["volvooncall"],
-      install_requires=[
-          'requests'
-      ],
+      install_requires=list(
+          open('requirements.txt').read().strip().split('\n')),
       extras_require={
           'console':  ['docopt'],
       })
