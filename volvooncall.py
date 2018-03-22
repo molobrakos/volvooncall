@@ -170,6 +170,18 @@ class Vehicle(object):
         self._connection = conn
         self._url = url
 
+    def __repr__(self):
+        return self.unique_id
+
+    def __hash__(self):
+        return hash(self.unique_id)
+
+    def __eq__(self, other):
+        return self.unique_id == other.unique_id
+
+    def __ne__(self, other):
+        return not(self == other)
+
     @property
     def unique_id(self):
         return (self.registration_number.lower() or
