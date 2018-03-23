@@ -195,10 +195,10 @@ class Vehicle(object):
         """Perform a query to the online service."""
         return self._connection.post(query, self._url, **data)
 
-    def call(self, method):
+    def call(self, method, **data):
         """Make remote method call."""
         try:
-            res = self.post(method)
+            res = self.post(method, **data)
 
             if 'service' and 'status' not in res:
                 _LOGGER.warning('Failed to execute: %s', res['status'])
@@ -260,17 +260,29 @@ class Vehicle(object):
 
     def lock(self):
         """Lock."""
-        if not self.lock_supported:
-            _LOGGER.error('Lock not supported')
-            return
-        self.call('lock')
+        if self.lock_supported:
+            self.call('lock')
+        else:
+            _LOGGER.warning('Lock not supported')
 
     def unlock(self):
         """Unlock."""
-        if not self.unlock_supported:
-            _LOGGER.error('Unlock not supported')
-            return
-        self.call('unlock')
+        if self.unlock_supported:
+            self.call('unlock')
+        else:
+            _LOGGER.warning('Unlock not supported')
+
+    def start_engine(self):
+        if self.engine_start_supported:
+            self.call('engine/start', runtime=5)
+        else:
+            _LOGGER.warning('Engine start not supported.')
+
+    def start_engine(self):
+        if self.engine_stop_supported:
+            self.call('engine/stop')
+        else:
+            _LOGGER.warning('Engine stop not supported.')
 
     def start_heater(self):
         """Turn on/off heater."""
@@ -279,7 +291,7 @@ class Vehicle(object):
         elif self.preclimatization_supported:
             self.call('preclimatization/start')
         else:
-            _LOGGER.error('No heater or preclimatization support.')
+            _LOGGER.warning('No heater or preclimatization support.')
 
     def stop_heater(self):
         """Turn on/off heater."""
@@ -288,7 +300,7 @@ class Vehicle(object):
         elif self.preclimatization_supported:
             self.call('preclimatization/stop')
         else:
-            _LOGGER.error('No heater or preclimatization support.')
+            _LOGGER.warning('No heater or preclimatization support.')
 
     def __str__(self):
         return '%s (%s/%d) %s' % (
