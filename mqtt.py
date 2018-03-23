@@ -82,10 +82,36 @@ class Entity:
         return getattr(self.vehicle, self.attr + '_supported', True)
 
     @property
+    def discovery_prefix(self):
+        return 'homeassistant'
+
+    @property
+    def topic_prefix(self):
+        return 'volvo'
+
+    @property
+    def node_id(self):
+        return f'{self.topic_prefix}_{self.vehicle.unique_id}'
+
+    @property
+    def discovery_topic(self):
+        return f'{self.discovery_prefix}/{self.component}/{self.node_id}/{self.attr}/config'
+
+    @property
     def topic(self):
-        discovery_prefix = 'homeassistant'
-        node = f'volvo_{self.vehicle.unique_id}'
-        return f'{discovery_prefix}/{self.component}/{node}/{self.attr}'
+        return f'{self.topic_prefix}/{self.vehicle.unique_id}/{self.attr}'
+
+    @property
+    def state_topic(self):
+        return f'{self.topic}/state'
+
+    @property
+    def availability_topic(self):
+        return f'{self.topic}/avail'
+
+    @property
+    def command_topic(self):
+        return f'{self.topic}/cmd'
 
     @property
     def discovery_payload(self):
@@ -102,22 +128,6 @@ class Entity:
     @property
     def state(self):
         return getattr(self.vehicle, self.attr)
-
-    @property
-    def state_topic(self):
-        return f'{self.topic}/state'
-
-    @property
-    def discovery_topic(self):
-        return f'{self.topic}/config'
-
-    @property
-    def availability_topic(self):
-        return f'{self.topic}/avail'
-
-    @property
-    def command_topic(self):
-        return f'{self.topic}/cmd'
 
     def subscribe(self, mqtt):
         mqtt.subscribe(self.command_topic)
