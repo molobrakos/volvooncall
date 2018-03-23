@@ -13,6 +13,7 @@ Usage:
   voc [-v|-vv] [options] print [<attribute>]
   voc [-v|-vv] [options] (lock | unlock)
   voc [-v|-vv] [options] heater (start | stop)
+  voc [-v|-vv] [options] engine (start | stop)
   voc [-v|-vv] [options] call <method>
   voc [-v|-vv] [options] mqtt
 
@@ -171,6 +172,11 @@ def main():
             vehicle.start_heater()
         else:
             vehicle.stop_heater()
+    elif args['engine']:
+        if args['start']:
+            vehicle.start_engine()
+        else:
+            vehicle.stop_engine()
     elif args['lock']:
         vehicle.lock()
     elif args['unlock']:
