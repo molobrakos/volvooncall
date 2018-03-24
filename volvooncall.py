@@ -279,7 +279,7 @@ class Vehicle(object):
             _LOGGER.warning('Engine start not supported.')
 
     def start_engine(self):
-        if self.engine_stop_supported:
+        if self.engine_start_supported:
             self.call('engine/stop')
         else:
             _LOGGER.warning('Engine stop not supported.')
