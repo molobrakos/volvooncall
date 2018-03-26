@@ -15,6 +15,13 @@ from volvooncall import owntracks_encrypt
 _LOGGER = logging.getLogger(__name__)
 
 
+STATE_ON = 'on'
+STATE_OFF = 'off'
+STATE_ONLINE = 'online'
+STATE_OFFLINE = 'offline'
+STATE_LOCK = 'lock'
+STATE_UNLOCK = 'unlock'
+
 def read_mqtt_config():
     """Read credentials from ~/.config/mosquitto_pub."""
     with open(join(env.get('XDG_CONFIG_HOME',
@@ -118,6 +125,8 @@ class Entity:
         return dict(name=self.entity_name,
                     state_topic=self.state_topic,
                     availability_topic=self.availability_topic,
+                    payload_available=STATE_ONLINE,
+                    payload_not_available=STATE_OFFLINE,
                     command_topic=self.command_topic)
 
     def publish(self, mqtt, topic, payload, retain=False):
@@ -142,7 +151,7 @@ class Entity:
 
     def publish_availability(self, mqtt, available):
         self.publish(mqtt, self.availability_topic,
-                     'online' if available and self.state else 'offline')
+                     STATE_ONLINE if available and self.state else STATE_OFFLINE)
 
     def publish_state(self, mqtt):
         if self.state:
@@ -226,15 +235,18 @@ class BinarySensor(Entity):
 
     @property
     def discovery_payload(self):
-        return dict(super().discovery_payload, device_class=self.device_class)
+        return dict(super().discovery_payload,
+                    payload_on=STATE_ON,
+                    payload_off=STATE_OFF,
+                    device_class=self.device_class)
 
     @property
     def state(self):
         val = super().state
         if self.attr == 'bulb_failures':
-            return 'ON' if val else 'OFF'
+            return STATE_ON if val else STATE_OFF
         else:
-            return 'ON' if val != 'Normal' else 'OFF'
+            return STATE_ON if val != 'Normal' else STATE_OFF
 
 
 class AnyOpen(BinarySensor):
@@ -244,10 +256,10 @@ class AnyOpen(BinarySensor):
     @property
     def state(self):
         state = super().state
-        return ('ON' if any([state[key]
-                             for key in state
-                             if 'Open' in key])
-                else 'OFF')
+        return (STATE_ON if any([state[key]
+                                 for key in state
+                                 if 'Open' in key])
+                else STATE_OFF)
 
 
 class Doors(AnyOpen):
@@ -272,18 +284,12 @@ class Lock(Entity):
 
     @property
     def state(self):
-        return ('LOCK' if self.vehicle.is_locked
-                else 'UNLOCK')
-
-    @property
-    def discovery_payload(self):
-        return dict(super().discovery_payload,
-                    command_topic=f'{self.topic}/set')
+        return (STATE_UNLOCK, STATE_LOCK)[self.vehicle.is_locked]
 
     def command(self, command):
-        if command == 'lock':
+        if command == STATE_LOCK:
             self.vehichle.lock()
-        elif command == 'unlock':
+        elif command == STATE_UNLOCK:
             self.vehichle.unlock()
         else:
             _LOGGER.warning(f'Unknown command: {command}')
@@ -299,8 +305,13 @@ class Switch(Entity):
     @property
     def discovery_payload(self):
         return dict(super().discovery_payload,
-                    command_topic=f'{self.topic}/set',
+                    payload_on=STATE_ON,
+                    payload_off=STATE_OFF,
                     icon=self.icon)
+
+    @property
+    def state(self):
+        return (STATE_OFF, STATE_ON)[super().state]
 
 
 class Heater(Switch):
@@ -311,12 +322,12 @@ class Heater(Switch):
 
     @property
     def state(self):
-        return 'ON' if self.vehicle.is_heater_on else 'OFF'
+        return (STATE_OFF, STATE_ON)[self.vehicle.is_heater_on]
 
     def command(self, command):
-        if command == 'on':
+        if command == STATE_ON:
             self.vehichle.start_heater()
-        elif command == 'off':
+        elif command == STATE_OFF:
             self.vehichle.stop_heater()
         else:
             _LOGGER.warning(f'Unknown command: {command}')
