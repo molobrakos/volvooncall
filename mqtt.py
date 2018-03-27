@@ -9,6 +9,7 @@ from os import environ as env
 from requests import certs
 from threading import current_thread
 from time import sleep
+from threading import RLock
 import paho.mqtt.client as paho
 from volvooncall import owntracks_encrypt
 
@@ -21,6 +22,18 @@ STATE_ONLINE = 'online'
 STATE_OFFLINE = 'offline'
 STATE_LOCK = 'lock'
 STATE_UNLOCK = 'unlock'
+
+
+def threadsafe(function):
+    """ Synchronization decorator.
+    The paho MQTT library runs the on_subscribe etc callbacks
+    in its own thread and since we keep track of subscriptions etc
+    in Device.subscriptions, we need to synchronize threads."""
+    def wrapper(*args, **kw):
+        with Entity.lock:
+            return function(*args, **kw)
+    return wrapper
+
 
 def read_mqtt_config():
     """Read credentials from ~/.config/mosquitto_pub."""
@@ -35,19 +48,30 @@ def read_mqtt_config():
                     password=d['pw'])
 
 
+@threadsafe
 def on_connect(client, userdata, flags, rc):
     current_thread().setName('MQTTThread')
     _LOGGER.info('Connected')
 
 
+@threadsafe
 def on_publish(client, userdata, mid):
-    _LOGGER.info('Published')
+    _LOGGER.debug('Successfully published on %s',
+                  Entity.subscriptions.pop(mid))
 
 
+@threadsafe
 def on_disconnect(client, userdata, rc):
     _LOGGER.warning('Disconnected')
 
 
+@threadsafe
+def on_subscribe(client, userdata, mid, qos):
+    _LOGGER.debug(f'Successfully subscribed to %s',
+                  Entity.subscriptions.pop(mid))
+
+
+@threadsafe
 def on_message(client, userdata, message):
     _LOGGER.info('Got %s', message)
     entity = Entity.subscriptions.get(message.topic)
@@ -60,6 +84,7 @@ def on_message(client, userdata, message):
 class Entity:
 
     subscriptions = {}
+    lock = RLock()
 
     def __init__(self, component, attr, name):
         self.attr = attr
@@ -129,18 +154,31 @@ class Entity:
                     payload_not_available=STATE_OFFLINE,
                     command_topic=self.command_topic)
 
+    @threadsafe
     def publish(self, mqtt, topic, payload, retain=False):
         payload = dump_json(payload) if isinstance(payload, dict) else payload
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
-        mqtt.publish(topic, payload, retain=retain)
+        res, mid = mqtt.publish(topic, payload, retain=retain)
+        if res == paho.MQTT_ERR_SUCCESS:
+            Entity.subscriptions[mid] = topic
+        else:
+            _LOGGER.warning('Failure to publish on %s', topic)
 
     @property
     def state(self):
         return getattr(self.vehicle, self.attr)
 
+    @threadsafe
     def subscribe(self, mqtt):
-        mqtt.subscribe(self.command_topic)
-        Entity.subscriptions[self.command_topic] = self
+        if Entity.subscriptions.get(self.command_topic):
+            _LOGGER.warning('Already subscribed to %s', self.command_topic)
+            return
+        res, mid = mqtt.subscribe(self.command_topic)
+        if res == paho.MQTT_ERR_SUCCESS:
+            Entity.subscriptions[mid] = self.command_topic
+            Entity.subscriptions[self.command_topic] = self
+        else:
+            _LOGGER.warning('Failure to subscribe to %s', self.command_topic)
 
     def command(self, command):
         _LOGGER.warning(f'No command to execute for {self}: {command}')
@@ -416,6 +454,7 @@ def run(voc, config):
     mqtt.on_disconnect = on_disconnect
     mqtt.on_publish = on_publish
     mqtt.on_message = on_message
+    mqtt.on_subscribe = on_subscribe
 
     mqtt.connect(host=mqtt_config['host'],
                  port=int(mqtt_config['port']))
