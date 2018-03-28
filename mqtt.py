@@ -24,6 +24,10 @@ STATE_LOCK = 'lock'
 STATE_UNLOCK = 'unlock'
 
 
+DISCOVERY_PREFIX = 'homeassistant'
+TOPIC_PREFIX = 'volvo'
+
+
 def threadsafe(function):
     """ Synchronization decorator.
     The paho MQTT library runs the on_subscribe etc callbacks
@@ -111,27 +115,20 @@ class Entity:
 
     @property
     def supported(self):
+        #  Default to supported if foo_supported is not present
         return getattr(self.vehicle, self.attr + '_supported', True)
 
     @property
-    def discovery_prefix(self):
-        return 'homeassistant'
-
-    @property
-    def topic_prefix(self):
-        return 'volvo'
-
-    @property
     def node_id(self):
-        return f'{self.topic_prefix}_{self.vehicle.unique_id}'
+        return f'{TOPIC_PREFIX}_{self.vehicle.unique_id}'
 
     @property
     def discovery_topic(self):
-        return f'{self.discovery_prefix}/{self.component}/{self.node_id}/{self.attr}/config'
+        return f'{DISCOVERY_PREFIX}/{self.component}/{self.node_id}/{self.attr}/config'
 
     @property
     def topic(self):
-        return f'{self.topic_prefix}/{self.vehicle.unique_id}/{self.attr}'
+        return f'{TOPIC_PREFIX}/{self.vehicle.unique_id}/{self.attr}'
 
     @property
     def state_topic(self):
