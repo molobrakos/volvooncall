@@ -374,6 +374,7 @@ class Position(Entity):
 
     @property
     def supported(self):
+        #  No corresponding attr_supported
         return True
 
     def publish_discovery(self, mqtt):
