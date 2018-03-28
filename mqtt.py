@@ -67,7 +67,7 @@ def on_disconnect(client, userdata, rc):
 
 @threadsafe
 def on_subscribe(client, userdata, mid, qos):
-    _LOGGER.debug(f'Successfully subscribed to %s',
+    _LOGGER.debug('Successfully subscribed to %s',
                   Entity.subscriptions.pop(mid))
 
 
