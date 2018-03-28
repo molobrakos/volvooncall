@@ -56,8 +56,8 @@ def on_connect(client, userdata, flags, rc):
 
 @threadsafe
 def on_publish(client, userdata, mid):
-    _LOGGER.debug('Successfully published on %s',
-                  Entity.subscriptions.pop(mid))
+    _LOGGER.debug('Successfully published on %s: %s',
+                  *Entity.subscriptions.pop(mid))
 
 
 @threadsafe
@@ -160,7 +160,7 @@ class Entity:
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
         res, mid = mqtt.publish(topic, payload, retain=retain)
         if res == paho.MQTT_ERR_SUCCESS:
-            Entity.subscriptions[mid] = topic
+            Entity.subscriptions[mid] = (topic, payload)
         else:
             _LOGGER.warning('Failure to publish on %s', topic)
 
