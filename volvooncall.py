@@ -19,7 +19,7 @@ from requests.compat import urljoin
 
 _ = version_info >= (3, 0) or exit('Python 3 required')
 
-__version__ = '0.4.4'
+__version__ = '0.5.0'
 
 _LOGGER = logging.getLogger(__name__)
 
