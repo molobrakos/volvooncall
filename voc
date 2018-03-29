@@ -25,7 +25,7 @@ Options:
   -i <vin>              Vehicle VIN or registration number
   -g                    Geolocate position
   --owntracks_key=<key> Owntracks encryption password
-  -I <interval>         Polling interval (seconds) [default: 60]
+  -I <interval>         Polling interval (seconds) [default: 300]
   -h --help             Show this message
   -v,-vv                Increase verbosity
   --scandinavian_miles  Report using Scandinavian miles instead of km ISO unit
