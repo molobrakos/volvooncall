@@ -145,9 +145,9 @@ def main():
     elif args['print']:
         attr = args['<attribute>']
         if attr:
-            if not attr in vehicle.data:
+            if not attr in vehicle.properties:
                 exit('unknown attribute')
-            print(vehicle.data[attr])
+            print(vehicle.properties[attr])
         else:
             print(vehicle.json)
     elif args['owntracks']:
@@ -159,7 +159,7 @@ def main():
                  lon=vehicle.position['longitude'],
                  acc=1,
                  tst=int(time()),
-                 _vehicle=OrderedDict(sorted(vehicle.data.items()))),
+                 _vehicle=OrderedDict(sorted(vehicle.properties.items()))),
             indent=4, default=json_serialize)
         key = credentials.get('owntracks_key')
         if key:
