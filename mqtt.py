@@ -318,6 +318,13 @@ class Lock(Entity):
                          name='Door lock')
 
     @property
+    def discovery_payload(self):
+        return dict(super().discovery_payload,
+                    payload_lock=STATE_LOCK,
+                    payload_lock=STATE_UNLOCK,
+                    device_class=self.device_class)
+
+    @property
     def state(self):
         return (STATE_UNLOCK, STATE_LOCK)[self.vehicle.is_locked]
 
