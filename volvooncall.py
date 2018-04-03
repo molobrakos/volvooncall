@@ -182,7 +182,10 @@ class Vehicle(object):
         return not(self == other)
 
     def __getattr__(self, name):
-        return self.properties[slug2camel(name)]
+        try:
+            return self.properties[slug2camel(name)]
+        except KeyError:
+            raise AttributeError
 
     @property
     def properties(self):
