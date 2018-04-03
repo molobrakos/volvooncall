@@ -322,7 +322,7 @@ class Lock(Entity):
         return dict(super().discovery_payload,
                     payload_lock=STATE_LOCK,
                     payload_lock=STATE_UNLOCK,
-                    device_class=self.device_class)
+                    optimistic=True)
 
     @property
     def state(self):
@@ -349,7 +349,8 @@ class Switch(Entity):
         return dict(super().discovery_payload,
                     payload_on=STATE_ON,
                     payload_off=STATE_OFF,
-                    icon=self.icon)
+                    icon=self.icon,
+                    optimistic=True)
 
     @property
     def state(self):
