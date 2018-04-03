@@ -36,7 +36,7 @@ TIMEOUT = timedelta(seconds=30)
 
 
 def _obj_parser(obj):
-    """Parse datetime (only Python3 because of timezone)."""
+    """Parse datetime."""
     for key, val in obj.items():
         try:
             obj[key] = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S%z')
@@ -125,14 +125,14 @@ class Connection(object):
                 self._state = {}
                 for vehicle in user['accountVehicleRelations']:
                     rel = self.get(vehicle)
-                    vehicle = rel['vehicle'] + '/'
-                    state = self.get('attributes', vehicle)
-                    self._state.update({vehicle: state})
-            for vin, vehicle in self._state.items():
-                self._state[vin].update(
-                    self.get('status', vin))
-                self._state[vin].update(
-                    self.get('position', vin))
+                    url = rel['vehicle'] + '/'
+                    state = self.get('attributes', url)
+                    self._state.update({url: state})
+            for url in self._state:
+                self._state[url].update(
+                    self.get('status', url))
+                self._state[url].update(
+                    self.get('position', url))
                 _LOGGER.debug('State: %s', self._state)
             return True
         except (IOError, OSError) as error:
@@ -141,32 +141,31 @@ class Connection(object):
     @property
     def vehicles(self):
         """Return vehicle state."""
-        return (Vehicle(self, url, vehicle)
-                for url, vehicle in self._state.items())
+        return (Vehicle(self, url)
+                for url in self._state)
 
     def vehicle(self, vin):
         """Return vehicle for given vin."""
         return next((vehicle for vehicle in self.vehicles
                      if vehicle.unique_id == vin.lower()), None)
 
+    def vehicle_properties(self, vehicle_url):
+        return self._state.get(vehicle_url)
 
-def camel2slug(data):
-    """Convert camelCase to camel_case."""
-    if not isinstance(data, dict):
-        return data
-    return {re.sub("([A-Z])", "_\\1", k).lower().lstrip("_"):
-            camel2slug(v)
-            for k, v in data.items()}
+def slug2camel(s):
+    """Convert foo_bar to fooBar.
+
+    >>> slug2camel('foo_bar')
+    'fooBar'
+
+    """
+    return re.sub('(_[a-z])', lambda match: match.group(1)[1:].upper(), s)
 
 
 class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
     # pylint: disable=no-member
-    def __init__(self, conn, url, data):
-        self.data = data
-        for key, val in camel2slug(data).items():
-            if not hasattr(self, key):  # do not overwrite
-                setattr(self, key, val)
+    def __init__(self, conn, url):
         self._connection = conn
         self._url = url
 
@@ -182,10 +181,17 @@ class Vehicle(object):
     def __ne__(self, other):
         return not(self == other)
 
+    def __getattr__(self, name):
+        return self.properties[slug2camel(name)]
+
+    @property
+    def properties(self):
+        return self._connection.vehicle_properties(self._url)
+
     @property
     def unique_id(self):
-        return (self.registration_number.lower() or
-                self.vin.lower())
+        return (self.registration_number or
+                self.vin).lower()
 
     def get(self, query):
         """Perform a query to the online service."""
@@ -232,7 +238,7 @@ class Vehicle(object):
     @property
     def position_supported(self):
         """Return true if vehichle has position."""
-        return 'position' in self.data
+        return 'position' in self.properties
 
     @property
     def heater_supported(self):
@@ -313,7 +319,7 @@ class Vehicle(object):
     def json(self):
         """Return JSON representation."""
         return to_json(
-            OrderedDict(sorted(self.data.items())),
+            OrderedDict(sorted(self.properties.items())),
             indent=4, default=json_serialize)
 
 
