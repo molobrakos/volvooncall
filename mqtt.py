@@ -321,7 +321,7 @@ class Lock(Entity):
     def discovery_payload(self):
         return dict(super().discovery_payload,
                     payload_lock=STATE_LOCK,
-                    payload_lock=STATE_UNLOCK,
+                    payload_unlock=STATE_UNLOCK,
                     optimistic=True)
 
     @property
