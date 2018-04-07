@@ -3,3 +3,4 @@ setuptools
 paho-mqtt
 geopy
 docopt
+pyyaml
