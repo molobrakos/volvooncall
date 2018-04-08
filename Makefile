@@ -36,3 +36,16 @@ pypi:
 
 release:
 	git diff-index --quiet HEAD -- && make toxlint && make toxtest && bumpversion patch && make pypi
+
+IMAGE=voc
+
+docker-build:
+	docker build -t $(IMAGE) .
+
+docker-run-mqtt:
+	docker run \
+		-ti --rm \
+		--net=bridge \
+		-v $(HOME)/.voc.conf:/root/voc.conf:ro \
+		-v $(HOME)/.config/mosquitto_pub:/root/.config/mosquitto_pub:ro \
+		$(IMAGE) ./volvooncall/voc mqtt -vv
