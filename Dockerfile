@@ -13,7 +13,7 @@ RUN set -x \
 && useradd -M --home-dir /app voc \
   ;
 
-COPY requirements.txt /app
+COPY requirements.txt ./
 
 RUN pip --no-cache-dir --trusted-host pypi.org install -r requirements.txt coloredlogs libnacl \
   && rm requirements.txt \
