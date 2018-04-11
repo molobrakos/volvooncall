@@ -38,6 +38,7 @@ Options:
   --version             Show version
 ```
 
+Retrieving basic status
 ```
 > /voc status
 ABC123 (XC60/2014) ABCD1234567890 92891km (fuel 25% 210km)
@@ -45,3 +46,10 @@ ABC123 (XC60/2014) ABCD1234567890 92891km (fuel 25% 210km)
     locked: yes
     heater: off
 ```
+Configuration file in `$HOME/.voc.conf`:
+```
+username: <username>
+password: <password>
+```
+
+
