@@ -40,7 +40,7 @@ Options:
 
 Retrieving basic status
 ```
-> /voc status
+> voc status
 ABC123 (XC60/2014) ABCD1234567890 92891km (fuel 25% 210km)
     position: 12.34567890,12.34567890
     locked: yes
