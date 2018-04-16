@@ -4,7 +4,7 @@ WORKDIR /app
 
 RUN set -x \
 && apt-get update \
-&& apt-get -y install git libsodium13 \
+&& apt-get -y install libsodium13 \
 && apt-get -y autoremove \
 && apt-get -y clean \
 && rm -rf /var/lib/apt/lists/* \
