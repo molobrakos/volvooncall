@@ -124,11 +124,13 @@ class Entity:
 
     @property
     def discovery_topic(self):
-        return f'{DISCOVERY_PREFIX}/{self.component}/{self.node_id}/{self.attr}/config'
+        return (f'{DISCOVERY_PREFIX}/{self.component}/'
+                f'{self.node_id}/{self.attr}/config')
 
     @property
     def topic(self):
-        return f'{TOPIC_PREFIX}/{self.vehicle.unique_id}/{self.attr}'
+        return (f'{TOPIC_PREFIX}/{self.vehicle.unique_id}/'
+                f'{self.attr}')
 
     @property
     def state_topic(self):
@@ -182,11 +184,13 @@ class Entity:
 
     def publish_discovery(self, mqtt):
         self.subscribe(mqtt)
-        self.publish(mqtt, self.discovery_topic, self.discovery_payload, retain=True)
+        self.publish(mqtt, self.discovery_topic, self.discovery_payload,
+                     retain=True)
 
     def publish_availability(self, mqtt, available):
         self.publish(mqtt, self.availability_topic,
-                     STATE_ONLINE if available and self.state else STATE_OFFLINE)
+                     STATE_ONLINE if available and self.state else
+                     STATE_OFFLINE)
 
     def publish_state(self, mqtt):
         if self.state:

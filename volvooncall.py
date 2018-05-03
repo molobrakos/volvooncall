@@ -152,6 +152,7 @@ class Connection(object):
     def vehicle_properties(self, vehicle_url):
         return self._state.get(vehicle_url)
 
+
 def slug2camel(s):
     """Convert foo_bar to fooBar.
 
