@@ -48,4 +48,4 @@ docker-run-mqtt:
 		--net=bridge \
 		-v $(HOME)/.voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
-		$(IMAGE) /app/voc mqtt -vv
+		$(IMAGE) -vv
