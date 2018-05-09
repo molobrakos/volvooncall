@@ -100,7 +100,7 @@ class Entity:
     def setup(self, vehicle, config):
         self.vehicle = vehicle
         self.config = config
-        return self.supported
+        return self.is_supported
 
     def __str__(self):
         return f'{self.entity_name}'
@@ -114,7 +114,7 @@ class Entity:
         return f'{self.vehicle_name} {self.name}'
 
     @property
-    def supported(self):
+    def is_supported(self):
         #  Default to supported if foo_supported is not present
         return getattr(self.vehicle, self.attr + '_supported', True)
 
@@ -385,7 +385,7 @@ class Position(Entity):
         super().__init__(None, None, None)
 
     @property
-    def supported(self):
+    def is_supported(self):
         #  No corresponding attr_supported
         return True
 
