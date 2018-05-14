@@ -69,7 +69,6 @@ def on_publish(client, userdata, mid):
                   *Entity.pending.pop(mid))
 
 
-@threadsafe
 def on_disconnect(client, userdata, rc):
     if rc == MQTT_ERR_SUCCESS:
         # we called disconnect ourselves
