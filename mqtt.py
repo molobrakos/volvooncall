@@ -18,7 +18,7 @@ from os import getpid
 
 _LOGGER = logging.getLogger(__name__)
 
-CLEAN_SESSION = False
+CLEAN_SESSION = True
 
 STATE_ON = 'on'
 STATE_OFF = 'off'
