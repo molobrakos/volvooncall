@@ -471,11 +471,11 @@ def run(voc, config):
 
     # FIXME: Allow MQTT credentials in voc.conf
 
+    clean_session = CLEAN_SESSION
+
     client_id = 'tellsticknet_{hostname}_{pid}'.format(
         hostname=hostname(),
-        pid=getpid())
-
-    clean_session = CLEAN_SESSION
+        pid=getpid()) if not clean_session else None
 
     mqtt_config = read_mqtt_config()
     mqtt = paho.Client(client_id = client_id, clean_session = clean_session)
