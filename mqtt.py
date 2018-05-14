@@ -11,10 +11,14 @@ from threading import current_thread
 from time import sleep
 from threading import RLock
 import paho.mqtt.client as paho
+from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
+from platform import node as hostname
+from os import getpid
 
 _LOGGER = logging.getLogger(__name__)
 
+CLEAN_SESSION = False
 
 STATE_ON = 'on'
 STATE_OFF = 'off'
@@ -22,7 +26,6 @@ STATE_ONLINE = 'online'
 STATE_OFFLINE = 'offline'
 STATE_LOCK = 'lock'
 STATE_UNLOCK = 'unlock'
-
 
 DISCOVERY_PREFIX = 'homeassistant'
 TOPIC_PREFIX = 'volvo'
@@ -56,23 +59,31 @@ def read_mqtt_config():
 def on_connect(client, userdata, flags, rc):
     current_thread().setName('MQTTThread')
     _LOGGER.info('Connected')
+    for topic, entity in Entity.subscriptions.items():
+        entity.subscribe_to(topic, resubscribe=True)
 
 
 @threadsafe
 def on_publish(client, userdata, mid):
     _LOGGER.debug('Successfully published on %s: %s',
-                  *Entity.subscriptions.pop(mid))
+                  *Entity.pending.pop(mid))
 
 
 @threadsafe
 def on_disconnect(client, userdata, rc):
-    _LOGGER.warning('Disconnected')
+    if rc == MQTT_ERR_SUCCESS:
+        # we called disconnect ourselves
+        _LOGGER.info('Disconnect successful')
+    else:
+        _LOGGER.warning('Disconnected, automatically reconnecting')
 
 
 @threadsafe
 def on_subscribe(client, userdata, mid, qos):
+    topic, entity = Entity.pending.pop(mid)
     _LOGGER.debug('Successfully subscribed to %s',
-                  Entity.subscriptions.pop(mid))
+                  topic)
+    Entity.subscriptions[topic] = entity
 
 
 @threadsafe
@@ -88,6 +99,7 @@ def on_message(client, userdata, message):
 class Entity:
 
     subscriptions = {}
+    pending = {}
     lock = RLock()
 
     def __init__(self, component, attr, name):
@@ -95,11 +107,14 @@ class Entity:
         self.component = component
         self.name = name
         self.vehicle = None
-        self.config = None
+        self.mqtt = None
 
-    def setup(self, vehicle, config):
+    def configurate(self, config):
+        pass
+
+    def setup(self, mqtt, vehicle):
+        self.mqtt = mqtt
         self.vehicle = vehicle
-        self.config = config
         return self.is_supported
 
     def __str__(self):
@@ -154,12 +169,12 @@ class Entity:
                     command_topic=self.command_topic)
 
     @threadsafe
-    def publish(self, mqtt, topic, payload, retain=False):
+    def publish(self, topic, payload, retain=False):
         payload = dump_json(payload) if isinstance(payload, dict) else payload
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
-        res, mid = mqtt.publish(topic, payload, retain=retain)
-        if res == paho.MQTT_ERR_SUCCESS:
-            Entity.subscriptions[mid] = (topic, payload)
+        res, mid = self.mqtt.publish(topic, payload, retain=retain)
+        if res == MQTT_ERR_SUCCESS:
+            Entity.pending[mid] = (topic, payload)
         else:
             _LOGGER.warning('Failure to publish on %s', topic)
 
@@ -168,34 +183,35 @@ class Entity:
         return getattr(self.vehicle, self.attr)
 
     @threadsafe
-    def subscribe(self, mqtt):
-        if Entity.subscriptions.get(self.command_topic):
-            _LOGGER.warning('Already subscribed to %s', self.command_topic)
+    def subscribe_to(self, topic, resubscribe=False):
+        _LOGGER.debug('Subscribing to %s', topic)
+        if not resubscribe and topic in Entity.subscriptions:
+            _LOGGER.warning('Already subscribed to %s', topic)
             return
-        res, mid = mqtt.subscribe(self.command_topic)
-        if res == paho.MQTT_ERR_SUCCESS:
-            Entity.subscriptions[mid] = self.command_topic
-            Entity.subscriptions[self.command_topic] = self
+        res, mid = self.mqtt.subscribe(topic)
+        if res == MQTT_ERR_SUCCESS:
+            Entity.pending[mid] = (self, topic)
         else:
-            _LOGGER.warning('Failure to subscribe to %s', self.command_topic)
+            _LOGGER.warning('Failure to subscribe to %s', self.topic)
 
     def command(self, command):
         _LOGGER.warning(f'No command to execute for {self}: {command}')
 
-    def publish_discovery(self, mqtt):
-        self.subscribe(mqtt)
-        self.publish(mqtt, self.discovery_topic, self.discovery_payload,
+    def publish_discovery(self):
+        self.subscribe_to(self.command_topic)
+        self.publish(self.discovery_topic,
+                     self.discovery_payload,
                      retain=True)
 
-    def publish_availability(self, mqtt, available):
-        self.publish(mqtt, self.availability_topic,
+    def publish_availability(self, available):
+        self.publish(self.availability_topic,
                      STATE_ONLINE if available and self.state else
                      STATE_OFFLINE)
 
-    def publish_state(self, mqtt):
+    def publish_state(self):
         if self.state:
             _LOGGER.debug(f'State for {self.attr}: {self.state}')
-            self.publish(mqtt, self.state_topic, self.state)
+            self.publish(self.state_topic, self.state)
         else:
             _LOGGER.warning(f'No state available for {self}')
 
@@ -206,12 +222,11 @@ class Sensor(Entity):
         self.icon = icon
         self.unit = unit
 
-    def setup(self, vehicle, config):
+    def configurate(self, config):
         self.unit = (
             self.unit if 'scandinavian_miles' not in config
             else 'L/mil' if self.attr == 'average_fuel_consumption'
             else self.unit.replace('km', 'mil'))
-        return super().setup(vehicle, config)
 
     @property
     def discovery_payload(self):
@@ -235,11 +250,10 @@ class FuelConsumption(Sensor):
                          icon='mdi:gas-station',
                          unit='L/100 km')
 
-    def setup(self, vehicle, config):
+    def configurate(self, config):
         self.unit = (self.unit.replace('100 km', 'mil')
                      if 'scandinavian_miles' in config
                      else self.unit)
-        return super().setup(vehicle, config)
 
     @property
     def state(self):
@@ -383,16 +397,20 @@ class Heater(Switch):
 class Position(Entity):
     def __init__(self):
         super().__init__(None, None, None)
+        self.key = None
+
+    def configurate(self, config):
+        self.key = config.get('owntracks_key')
 
     @property
     def is_supported(self):
         #  No corresponding attr_supported
         return True
 
-    def publish_discovery(self, mqtt):
+    def publish_discovery(self):
         pass
 
-    def publish_availability(self, mqtt, available):
+    def publish_availability(self, available):
         pass
 
     @property
@@ -401,7 +419,6 @@ class Position(Entity):
 
     @property
     def state(self):
-        key = self.config.get('owntracks_key')
         res = dict(_type='location',
                    tid='volvo',
                    t='p',
@@ -410,11 +427,11 @@ class Position(Entity):
                    acc=1,
                    tst=int(time()))
         return (dict(_type='encrypted',
-                     data=owntracks_encrypt(dump_json(res), key))
-                if key else res)
+                     data=owntracks_encrypt(dump_json(res), self.key))
+                if self.key else res)
 
 
-def create_entities(vehicle, config):
+def create_entities(mqtt, vehicle):
     return [entity for entity in [
         Position(),
         Lock(),
@@ -447,15 +464,21 @@ def create_entities(vehicle, config):
                      device_class='safety'),
         Doors(),
         Windows()
-    ] if entity.setup(vehicle, config)]
+    ] if entity.setup(mqtt, vehicle)]
 
 
 def run(voc, config):
 
     # FIXME: Allow MQTT credentials in voc.conf
 
+    client_id = 'tellsticknet_{hostname}_{pid}'.format(
+        hostname=hostname(),
+        pid=getpid())
+
+    clean_session = CLEAN_SESSION
+
     mqtt_config = read_mqtt_config()
-    mqtt = paho.Client()
+    mqtt = paho.Client(client_id = client_id, clean_session = clean_session)
     mqtt.username_pw_set(username=mqtt_config['username'],
                          password=mqtt_config['password'])
     mqtt.tls_set(certs.where())
@@ -480,14 +503,17 @@ def run(voc, config):
         for vehicle in voc.vehicles:
             if vehicle not in entities:
                 _LOGGER.debug('creating vehicle %s', vehicle)
-                entities[vehicle] = create_entities(vehicle, config)
+                entities[vehicle] = create_entities(mqtt, vehicle)
 
                 for entity in entities[vehicle]:
-                    entity.publish_discovery(mqtt)
+                    entity.configurate(config)
+
+                for entity in entities[vehicle]:
+                    entity.publish_discovery()
 
             for entity in entities[vehicle]:
-                entity.publish_availability(mqtt, available)
+                entity.publish_availability(available)
                 if available:
-                    entity.publish_state(mqtt)
+                    entity.publish_state()
 
         sleep(interval)
