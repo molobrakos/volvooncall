@@ -44,8 +44,10 @@ docker-build:
 
 docker-run-mqtt:
 	docker run \
-		-ti --rm \
-		--net=bridge \
-		-v $(HOME)/.voc.conf:/app/.config/voc.conf:ro \
+	        --name voc \
+		--restart always \
+		--detach \
+		--net bridge \
+		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
 		$(IMAGE) -vv
