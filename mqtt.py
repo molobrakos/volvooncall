@@ -95,6 +95,8 @@ def on_message(client, userdata, message):
         _LOGGER.warning(f'Unknown recipient for {message.topic}')
 
 
+#  FIXME: Extract into hass.py and share between
+#  mqtt and direct hass integration
 class Entity:
 
     subscriptions = {}
@@ -295,37 +297,14 @@ class BinarySensor(Entity):
     @property
     def state(self):
         val = super().state
-        if self.attr == 'bulb_failures':
+        if isinstance(val, (bool, list)):
+            #  for list (e.g. bulb_failures):
+            #  empty list (False) means no problem
             return STATE_ON if val else STATE_OFF
-        else:
+        elif isinstance(val, str):
             return STATE_ON if val != 'Normal' else STATE_OFF
-
-
-class AnyOpen(BinarySensor):
-    def __init__(self, attr, name, device_class):
-        super().__init__(attr, name, device_class)
-
-    @property
-    def state(self):
-        state = super().state
-        return (STATE_ON if any([state[key]
-                                 for key in state
-                                 if 'Open' in key])
-                else STATE_OFF)
-
-
-class Doors(AnyOpen):
-    def __init__(self):
-        super().__init__(attr='doors',
-                         name='Doors',
-                         device_class='door')
-
-
-class Windows(AnyOpen):
-    def __init__(self):
-        super().__init__(attr='windows',
-                         name='Windows',
-                         device_class='window')
+        else:
+            _LOGGER.error('Can not encode state %s:%s', val, type(val))
 
 
 class Lock(Entity):
@@ -461,8 +440,12 @@ def create_entities(mqtt, vehicle):
         BinarySensor(attr='bulb_failures',
                      name='Bulbs',
                      device_class='safety'),
-        Doors(),
-        Windows()
+        BinarySensor(attr='any_door_open',
+                     name='Doors',
+                     device_class='door'),
+        BinarySensor(attr='any_window_open',
+                     name='Windows',
+                     device_class='window')
     ] if entity.setup(mqtt, vehicle)]
 
 
@@ -477,7 +460,7 @@ def run(voc, config):
         pid=getpid()) if not clean_session else None
 
     mqtt_config = read_mqtt_config()
-    mqtt = paho.Client(client_id = client_id, clean_session = clean_session)
+    mqtt = paho.Client(client_id=client_id, clean_session=clean_session)
     mqtt.username_pw_set(username=mqtt_config['username'],
                          password=mqtt_config['password'])
     mqtt.tls_set(certs.where())
