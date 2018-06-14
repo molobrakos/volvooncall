@@ -477,7 +477,7 @@ def run(voc, config):
         pid=getpid()) if not clean_session else None
 
     mqtt_config = read_mqtt_config()
-    mqtt = paho.Client(client_id = client_id, clean_session = clean_session)
+    mqtt = paho.Client(client_id=client_id, clean_session=clean_session)
     mqtt.username_pw_set(username=mqtt_config['username'],
                          password=mqtt_config['password'])
     mqtt.tls_set(certs.where())
