@@ -206,7 +206,7 @@ class Entity:
 
     def publish_availability(self, available):
         self.publish(self.availability_topic,
-                     STATE_ONLINE if available and self.state else
+                     STATE_ONLINE if available and self.state is not None else
                      STATE_OFFLINE)
 
     def publish_state(self):
