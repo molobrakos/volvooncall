@@ -46,3 +46,12 @@ docker-run-mqtt:
 		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
 		$(IMAGE) -vv
+
+docker-run-mqtt-term:
+	docker run \
+                -ti --rm \
+                --name voc \
+		--net bridge \
+		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
+		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
+		$(IMAGE) -vv
