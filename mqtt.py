@@ -9,7 +9,7 @@ from os import environ as env
 from requests import certs
 from threading import current_thread
 from time import sleep
-from threading import RLock
+from threading import RLock, Event
 import paho.mqtt.client as paho
 from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
@@ -17,8 +17,6 @@ from platform import node as hostname
 from os import getpid
 
 _LOGGER = logging.getLogger(__name__)
-
-CLEAN_SESSION = True
 
 STATE_ON = 'on'
 STATE_OFF = 'off'
@@ -58,9 +56,20 @@ def read_mqtt_config():
 @threadsafe
 def on_connect(client, userdata, flags, rc):
     current_thread().setName('MQTTThread')
+    if rc != MQTT_ERR_SUCCESS:
+        _LOGGER.error('Failure to connect: %d', rc)
+        return
     _LOGGER.info('Connected')
-    for topic, entity in Entity.subscriptions.items():
-        entity.subscribe_to(topic, resubscribe=True)
+
+    if flags.get('session present', False):
+        _LOGGER.debug('Session present')
+    else:
+        _LOGGER.debug('Session not present, resubscribe to topics')
+        for entity in Entity.entities:
+            entity.publish_discovery()
+
+    # Go on
+    client.event_connected.set()
 
 
 @threadsafe
@@ -79,28 +88,24 @@ def on_disconnect(client, userdata, rc):
 
 @threadsafe
 def on_subscribe(client, userdata, mid, qos):
-    topic, entity = Entity.pending.pop(mid)
+    entity, topic = Entity.pending.pop(mid)
     _LOGGER.debug('Successfully subscribed to %s',
                   topic)
-    Entity.subscriptions[topic] = entity
+    client.message_callback_add(topic, entity.on_mqtt_message)
 
 
 @threadsafe
 def on_message(client, userdata, message):
-    _LOGGER.info('Got %s', message)
-    entity = Entity.subscriptions.get(message.topic)
-    if entity:
-        entity.command(message.payload)
-    else:
-        _LOGGER.warning(f'Unknown recipient for {message.topic}')
+    _LOGGER.warning('Got unhandled message on '
+                    f'{message.topic}: {message.payload}')
 
 
 #  FIXME: Extract into hass.py and share between
 #  mqtt and direct hass integration
 class Entity:
 
-    subscriptions = {}
     pending = {}
+    entities = []
     lock = RLock()
 
     def __init__(self, component, attr, name):
@@ -184,16 +189,16 @@ class Entity:
         return getattr(self.vehicle, self.attr)
 
     @threadsafe
-    def subscribe_to(self, topic, resubscribe=False):
+    def subscribe_to(self, topic):
         _LOGGER.debug('Subscribing to %s', topic)
-        if not resubscribe and topic in Entity.subscriptions:
-            _LOGGER.warning('Already subscribed to %s', topic)
-            return
         res, mid = self.mqtt.subscribe(topic)
         if res == MQTT_ERR_SUCCESS:
             Entity.pending[mid] = (self, topic)
         else:
             _LOGGER.warning('Failure to subscribe to %s', self.topic)
+
+    def on_mqtt_message(self, client, userdata, message):
+        self.command(message.payload)
 
     def command(self, command):
         _LOGGER.warning(f'No command to execute for {self}: {command}')
@@ -453,14 +458,14 @@ def run(voc, config):
 
     # FIXME: Allow MQTT credentials in voc.conf
 
-    clean_session = CLEAN_SESSION
-
-    client_id = 'tellsticknet_{hostname}_{pid}'.format(
+    client_id = 'voc_{hostname}_{pid}'.format(
         hostname=hostname(),
-        pid=getpid()) if not clean_session else None
+        pid=getpid())
 
     mqtt_config = read_mqtt_config()
-    mqtt = paho.Client(client_id=client_id, clean_session=clean_session)
+
+    mqtt = paho.Client(client_id=client_id,
+                       clean_session=False)
     mqtt.username_pw_set(username=mqtt_config['username'],
                          password=mqtt_config['password'])
     mqtt.tls_set(certs.where())
@@ -471,9 +476,15 @@ def run(voc, config):
     mqtt.on_message = on_message
     mqtt.on_subscribe = on_subscribe
 
+    mqtt.event_connected = Event()
+
     mqtt.connect(host=mqtt_config['host'],
                  port=int(mqtt_config['port']))
     mqtt.loop_start()
+
+    _LOGGER.debug('Waiting for MQTT connection')
+    mqtt.event_connected.wait()
+    _LOGGER.debug('Connected')
 
     interval = int(config['interval'])
     _LOGGER.info(f'Polling every {interval} seconds')
