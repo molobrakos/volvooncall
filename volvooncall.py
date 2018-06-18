@@ -293,6 +293,11 @@ class Vehicle(object):
         """Return trips."""
         return self.get('trips')
 
+    def honk_and_blink(self):
+        """Honk and blink."""
+        if self.honk_and_blink_supported:
+            self.call('honkAndBlink')
+
     def lock(self):
         """Lock."""
         if self.lock_supported:

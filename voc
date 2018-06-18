@@ -14,6 +14,7 @@ Usage:
   voc [-v|-vv] [options] (lock | unlock)
   voc [-v|-vv] [options] heater (start | stop)
   voc [-v|-vv] [options] engine (start | stop)
+  voc [-v|-vv] [options] honk_and_blink
   voc [-v|-vv] [options] call <method>
   voc [-v|-vv] [options] mqtt
 
@@ -52,7 +53,7 @@ def lookup_position(lat, lon):
         import certifi
         import geopy.geocoders
         from geopy.geocoders import Nominatim
-       
+
         geopy.geocoders.options.default_ssl_context = ssl.create_default_context(cafile=certifi.where())
         geolocator = Nominatim()
         return geolocator.reverse((lat, lon))
@@ -186,6 +187,8 @@ def main():
         vehicle.lock()
     elif args['unlock']:
         vehicle.unlock()
+    elif args['honk_and_blink']:
+        vehicle.honk_and_blink()
     elif args['call']:
         vehicle.call(args['<method>'])
     elif args['mqtt']:
