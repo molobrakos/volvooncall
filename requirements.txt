@@ -4,3 +4,4 @@ paho-mqtt
 geopy
 docopt
 pyyaml
+certifi
