@@ -17,6 +17,7 @@ Usage:
   voc [-v|-vv] [options] honk_and_blink
   voc [-v|-vv] [options] call <method>
   voc [-v|-vv] [options] mqtt
+  voc [-v|-vv] [options] dashboard
 
 Options:
   -u <username>         VOC username
@@ -189,6 +190,11 @@ def main():
         vehicle.unlock()
     elif args['honk_and_blink']:
         vehicle.honk_and_blink()
+    elif args['dashboard']:
+        from dashboard import Dashboard
+        dashboard = Dashboard(vehicle, credentials)
+        for instrument in dashboard.instruments:
+            print(f'{instrument}: {instrument.state}')
     elif args['call']:
         vehicle.call(args['<method>'])
     elif args['mqtt']:
