@@ -2,6 +2,63 @@
 
 CONF_SCANDINAVIAN_MILES = 'scandinavian_miles'
 
+
+def find_path(src, path):
+    """
+    >>> find_path(dict(a=1), 'a')
+    1
+
+    >>> find_path(dict(a=1), '')
+    {'a': 1}
+
+    >>> find_path(dict(a=None), 'a')
+
+
+    >>> find_path(dict(a=1), 'b')
+    Traceback (most recent call last):
+    ...
+    KeyError: 'b'
+
+    >>> find_path(dict(a=dict(b=1)), 'a.b')
+    1
+
+    >>> find_path(dict(a=dict(b=1)), 'a')
+    {'b': 1}
+
+    >>> find_path(dict(a=dict(b=1)), 'a.c')
+    Traceback (most recent call last):
+    ...
+    KeyError: 'c'
+
+    """
+    if not path:
+        return src
+    if isinstance(path, str):
+        path = path.split('.')
+    return find_path(src[path[0]], path[1:])
+
+
+def is_valid_path(src, path):
+    """
+    >>> is_valid_path(dict(a=1), 'a')
+    True
+
+    >>> is_valid_path(dict(a=1), '')
+    True
+
+    >>> is_valid_path(dict(a=1), None)
+    True
+
+    >>> is_valid_path(dict(a=1), 'b')
+    False
+    """
+    try:
+        find_path(src, path)
+        return True
+    except KeyError:
+        return False
+
+
 class Instrument:
 
     def __init__(self, component, attr, name):
@@ -10,7 +67,7 @@ class Instrument:
         self.name = name
         self.vehicle = None
 
-    def __str__(self):
+    def __repr__(self):
         return self.full_name
 
     def configurate(self, config):
@@ -31,15 +88,15 @@ class Instrument:
 
     @property
     def is_supported(self):
-        supported = self.attr + '_supported'
+        supported = 'is_' + self.attr + '_supported'
         if hasattr(self.vehicle, supported):
             return getattr(self.vehicle, supported)
-        else:
-            return hasattr(self.vehicle, self.attr)
+
+        return is_valid_path(self.vehicle.attrs, self.attr)
 
     @property
     def state(self):
-        return getattr(self.vehicle, self.attr)
+        return find_path(self.vehicle.attrs, self.attr)
 
 
 class Sensor(Instrument):
@@ -85,9 +142,11 @@ class FuelConsumption(Sensor):
 
 class Odometer(Sensor):
 
-    def __init__(self):
-        super().__init__(attr='odometer',
-                         name='Odometer',
+    def __init__(self,
+                 attr='odometer',
+                 name='Odometer'):
+        super().__init__(attr=attr,
+                         name=name,
                          icon='mdi:speedometer',
                          unit='km')
 
@@ -114,6 +173,17 @@ class BinarySensor(Instrument):
             return val != 'Normal'
         else:
             _LOGGER.error('Can not encode state %s:%s', val, type(val))
+
+
+class BatteryChargeStatus(BinarySensor):
+    def __init__(self):
+        super().__init__('hvBattery.hvBatteryChargeStatus',
+                         'Battery charging',
+                         'plug')
+
+    @property
+    def state(self):
+        return super().state != 'PlugRemoved'
 
 
 class Lock(Instrument):
@@ -173,6 +243,7 @@ class Position(Instrument):
                 super().state['longitude'])
 
 
+#  FIXME: Maybe make this list configurable as yaml
 class Dashboard():
     def __init__(self, vehicle, config):
         self.instruments = [
@@ -181,6 +252,10 @@ class Dashboard():
                 Lock(),
                 Heater(),
                 Odometer(),
+                Odometer(attr='tripMeter1',
+                         name='Trip meter 1'),
+                Odometer(attr='tripMeter2',
+                         name='Trip meter 2'),
                 Sensor(attr='fuel_amount',
                        name='Fuel amount',
                        icon='mdi:gas-station',
@@ -194,6 +269,46 @@ class Dashboard():
                        name='Range',
                        icon='mdi:ruler',
                        unit='km'),
+                Sensor(attr='hvBattery.distanceToHVBatteryEmpty',
+                       name='Battery range',
+                       icon='mdi:ruler',
+                       unit='km'),
+                Sensor(attr='hvBattery.hvBatteryLevel',
+                       name='Battery level',
+                       icon='mdi:battery',
+                       unit='%'),
+                Sensor(attr='hvBattery.timeToHVBatteryFullyCharged',
+                       name='Battery Range',
+                       icon='mdi:clock',
+                       unit='minutes'),
+                BatteryChargeStatus(),
+                BinarySensor(attr='doors.hoodOpen',
+                             name='Hood',
+                             device_class='door'),
+                BinarySensor(attr='doors.frontLeftDoorOpen',
+                             name='Front left door',
+                             device_class='door'),
+                BinarySensor(attr='doors.frontRightDoorOpen',
+                             name='Front right door',
+                             device_class='door'),
+                BinarySensor(attr='doors.rearLeftDoorOpen',
+                             name='Rear left door',
+                             device_class='door'),
+                BinarySensor(attr='doors.rearRightDoorOpen',
+                             name='Rear right door',
+                             device_class='door'),
+                BinarySensor(attr='tyrePressure.frontRightTyrePressure',
+                             name='Front right tyre',
+                             device_class='warning'),
+                BinarySensor(attr='tyrePressure.frontLeftTyrePressure',
+                             name='Front left tyre',
+                             device_class='warning'),
+                BinarySensor(attr='tyrePressure.rearRightTyrePressure',
+                             name='Rear right tyre',
+                             device_class='warning'),
+                BinarySensor(attr='tyrePressure.rearLeftTyrePressure',
+                             name='Rear left tyre',
+                             device_class='warning'),
                 BinarySensor(attr='washer_fluid_level',
                              name='Washer fluid',
                              device_class='safety'),
