@@ -48,11 +48,16 @@ DATEFMT = "%y-%m-%d %H:%M.%S"
 
 def lookup_position(lat, lon):
     try:
+        import ssl
+        import certifi
+        import geopy.geocoders
         from geopy.geocoders import Nominatim
+       
+        geopy.geocoders.options.default_ssl_context = ssl.create_default_context(cafile=certifi.where())
         geolocator = Nominatim()
         return geolocator.reverse((lat, lon))
     except ImportError:
-        _LOGGER.info('geopy not installed. position lookup not available')
+        _LOGGER.info('geopy or certifi not installed. position lookup not available')
 
 def print_vehicle(vehicle, geolocate=False):
     s = '%s %dkm' % (

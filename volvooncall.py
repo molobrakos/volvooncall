@@ -239,6 +239,31 @@ class Vehicle(object):
         except RequestException as error:
             _LOGGER.warning('Failure to execute: %s', error)
 
+    @staticmethod
+    def any_open(doors):
+        """
+        >>> Vehicle.any_open({'frontLeftWindowOpen': False,
+        ...                   'frontRightWindowOpen': False,
+        ...                   'timestamp': 'foo'})
+        False
+
+        >>> Vehicle.any_open({'frontLeftWindowOpen': True,
+        ...                   'frontRightWindowOpen': False,
+        ...                   'timestamp': 'foo'})
+        True
+        """
+        return any(doors[door]
+                   for door in doors
+                   if 'Open' in door)
+
+    @property
+    def any_window_open(self):
+        return self.any_open(self.windows)
+
+    @property
+    def any_door_open(self):
+        return self.any_open(self.doors)
+
     @property
     def position_supported(self):
         """Return true if vehichle has position."""

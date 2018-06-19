@@ -1,4 +1,13 @@
-default: lint test
+default: check
+
+lint:
+	tox -e lint
+
+test:
+	tox
+
+check: lint test
+
 
 clean:
 	rm -f *.pyc
@@ -6,20 +15,6 @@ clean:
 	rm -rf *.egg-info
 	rm -rf __pycache__
 	rm -f pip-selfcheck.json
-
-lint:
-	flake8
-	pylint3 volvooncall
-	pydocstyle volvooncall
-
-test:
-	pytest
-
-toxlint:
-	tox -e lint
-
-toxtest:
-	tox
 
 pypitestreg:
 	python setup.py register -r pypitest
@@ -44,9 +39,18 @@ docker-build:
 
 docker-run-mqtt:
 	docker run \
-	        --name voc \
+                --name voc \
 		--restart always \
 		--detach \
+		--net bridge \
+		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
+		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
+		$(IMAGE) -vv
+
+docker-run-mqtt-term:
+	docker run \
+                -ti --rm \
+                --name voc \
 		--net bridge \
 		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
