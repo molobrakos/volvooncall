@@ -187,6 +187,18 @@ class Vehicle(object):
         return self.attrs['vehicleType']
 
     @property
+    def odometer(self):
+        return self.attrs['odometer']
+
+    @property
+    def fuel_amount_level(self):
+        return self.attrs['fuelAmountLevel']
+
+    @property
+    def distance_to_empty(self):
+        return self.attrs['distanceToEmpty']
+
+    @property
     def is_honk_and_blink_supported(self):
         return self.attrs['honkAndBlinkSupported']
 
