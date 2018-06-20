@@ -117,8 +117,7 @@ class Sensor(Instrument):
         self.unit = unit
 
     def configurate(self, config):
-        if (CONF_SCANDINAVIAN_MILES in config and
-            'km' in self.unit):
+        if (CONF_SCANDINAVIAN_MILES in config and 'km' in self.unit):
             self.unit = 'mil'
 
     @property
@@ -154,6 +153,7 @@ class FuelConsumption(Sensor):
                 return round(val / 10, 2)
             else:
                 return round(val, 1)
+
 
 class Odometer(Sensor):
 
@@ -226,7 +226,7 @@ class Lock(Instrument):
         return self.vehicle.is_locked
 
     def command(self, command):
-        if state:
+        if self.state:
             self.vehichle.lock()
         else:
             self.vehichle.unlock()
@@ -391,6 +391,7 @@ class Dashboard():
                              device_class='door')
             ] if instrument.setup(vehicle, config)
         ]
+
 
 def create_dashboards(self, connection, config):
     return (Dashboard(vehicle, config) for vehicle in connection.vehicles)
