@@ -59,7 +59,7 @@ def lookup_position(lat, lon):
         geolocator = Nominatim()
         return geolocator.reverse((lat, lon))
     except ImportError:
-        _LOGGER.info('geopy or certifi not installed. position lookup not available')
+        _LOGGER.warning('geopy or certifi not installed. position lookup not available')
 
 def print_vehicle(vehicle, geolocate=False):
     s = '%s %dkm' % (
