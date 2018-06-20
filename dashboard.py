@@ -264,6 +264,19 @@ class Heater(Switch):
             self.vehichle.stop_heater()
 
 
+class Engine(Switch):
+    def __init__(self):
+        super().__init__(attr='engineRunning',
+                         name='Engine',
+                         icon='mdi:engine')
+
+    def set(self, state):
+        if state:
+            self.vehichle.start_engine()
+        else:
+            self.vehichle.stop_engine()
+
+
 class Position(Instrument):
     def __init__(self):
         super().__init__(component=None,
@@ -315,6 +328,7 @@ class Dashboard():
                        icon='mdi:clock',
                        unit='minutes'),
                 BatteryChargeStatus(),
+                Engine(),
                 BinarySensor(attr='doors.hoodOpen',
                              name='Hood',
                              device_class='door'),
