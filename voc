@@ -8,14 +8,16 @@ Usage:
   voc --version
   voc [-v|-vv] [options] list
   voc [-v|-vv] [options] status
-  voc [-v|-vv] [options] trips
+  voc [-v|-vv] [options] trips (--pretty|--json|--csv)
   voc [-v|-vv] [options] owntracks
   voc [-v|-vv] [options] print [<attribute>]
   voc [-v|-vv] [options] (lock | unlock)
   voc [-v|-vv] [options] heater (start | stop)
   voc [-v|-vv] [options] engine (start | stop)
+  voc [-v|-vv] [options] honk_and_blink
   voc [-v|-vv] [options] call <method>
   voc [-v|-vv] [options] mqtt
+  voc [-v|-vv] [options] dashboard
 
 Options:
   -u <username>         VOC username
@@ -52,12 +54,12 @@ def lookup_position(lat, lon):
         import certifi
         import geopy.geocoders
         from geopy.geocoders import Nominatim
-       
+
         geopy.geocoders.options.default_ssl_context = ssl.create_default_context(cafile=certifi.where())
         geolocator = Nominatim()
         return geolocator.reverse((lat, lon))
     except ImportError:
-        _LOGGER.info('geopy or certifi not installed. position lookup not available')
+        _LOGGER.warning('geopy or certifi not installed. position lookup not available')
 
 def print_vehicle(vehicle, geolocate=False):
     s = '%s %dkm' % (
@@ -146,7 +148,18 @@ def main():
     if args['status']:
         print_vehicle(vehicle, args['-g'])
     elif args['trips']:
-        print(to_json(vehicle.trips, indent=4, default=json_serialize))
+        if args['--json']:
+            print(to_json(vehicle.trips, indent=4, default=json_serialize))
+        else:
+            for trip in vehicle.trips['trips']:
+                print('%.19s %20.20s %-10.10s %.19s %10.10s %-10.10s' % (
+                    trip['tripDetails'][0]['startTime'],
+                    trip['tripDetails'][0]['startPosition']['streetAddress'],
+                    trip['tripDetails'][0]['startPosition']['city'],
+                    trip['tripDetails'][0]['endTime'],
+                    trip['tripDetails'][0]['endPosition']['streetAddress'],
+                    trip['tripDetails'][0]['endPosition']['city']))
+
     elif args['print']:
         attr = args['<attribute>']
         if attr:
@@ -186,6 +199,13 @@ def main():
         vehicle.lock()
     elif args['unlock']:
         vehicle.unlock()
+    elif args['honk_and_blink']:
+        vehicle.honk_and_blink()
+    elif args['dashboard']:
+        from dashboard import Dashboard
+        dashboard = Dashboard(vehicle, credentials)
+        for instrument in dashboard.instruments:
+            print(f'{instrument}: {instrument.str_state}')
     elif args['call']:
         vehicle.call(args['<method>'])
     elif args['mqtt']:
