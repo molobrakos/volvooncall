@@ -8,7 +8,7 @@ Usage:
   voc --version
   voc [-v|-vv] [options] list
   voc [-v|-vv] [options] status
-  voc [-v|-vv] [options] trips
+  voc [-v|-vv] [options] trips (--pretty|--json|--csv)
   voc [-v|-vv] [options] owntracks
   voc [-v|-vv] [options] print [<attribute>]
   voc [-v|-vv] [options] (lock | unlock)
@@ -148,7 +148,18 @@ def main():
     if args['status']:
         print_vehicle(vehicle, args['-g'])
     elif args['trips']:
-        print(to_json(vehicle.trips, indent=4, default=json_serialize))
+        if args['--json']:
+            print(to_json(vehicle.trips, indent=4, default=json_serialize))
+        else:
+            for trip in vehicle.trips['trips']:
+                print('%.19s %20.20s %-10.10s %.19s %10.10s %-10.10s' % (
+                    trip['tripDetails'][0]['startTime'],
+                    trip['tripDetails'][0]['startPosition']['streetAddress'],
+                    trip['tripDetails'][0]['startPosition']['city'],
+                    trip['tripDetails'][0]['endTime'],
+                    trip['tripDetails'][0]['endPosition']['streetAddress'],
+                    trip['tripDetails'][0]['endPosition']['city']))
+
     elif args['print']:
         attr = args['<attribute>']
         if attr:
@@ -194,7 +205,7 @@ def main():
         from dashboard import Dashboard
         dashboard = Dashboard(vehicle, credentials)
         for instrument in dashboard.instruments:
-            print(f'{instrument}: {instrument.state}')
+            print(f'{instrument}: {instrument.str_state}')
     elif args['call']:
         vehicle.call(args['<method>'])
     elif args['mqtt']:
