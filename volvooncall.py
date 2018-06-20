@@ -149,48 +149,110 @@ class Connection(object):
         return next((vehicle for vehicle in self.vehicles
                      if vehicle.unique_id == vin.lower()), None)
 
-    def vehicle_properties(self, vehicle_url):
+    def vehicle_attrs(self, vehicle_url):
         return self._state.get(vehicle_url)
-
-
-def slug2camel(s):
-    """Convert foo_bar to fooBar.
-
-    >>> slug2camel('foo_bar')
-    'fooBar'
-
-    """
-    return re.sub('(_[a-z])', lambda match: match.group(1)[1:].upper(), s)
 
 
 class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
-    # pylint: disable=no-member
+
     def __init__(self, conn, url):
         self._connection = conn
         self._url = url
 
-    def __repr__(self):
-        return self.unique_id
-
-    def __hash__(self):
-        return hash(self.unique_id)
-
-    def __eq__(self, other):
-        return self.unique_id == other.unique_id
-
-    def __ne__(self, other):
-        return not(self == other)
-
-    def __getattr__(self, name):
-        try:
-            return self.properties[slug2camel(name)]
-        except KeyError:
-            raise AttributeError
+    @property
+    def position(self):
+        return self.attrs['position']
 
     @property
-    def properties(self):
-        return self._connection.vehicle_properties(self._url)
+    def registration_number(self):
+        return self.attrs['registrationNumber']
+
+    @property
+    def vin(self):
+        return self.attrs['vin']
+
+    @property
+    def model_year(self):
+        return self.attrs['modelYear']
+
+    @property
+    def vehicle_type(self):
+        return self.attrs['vehicleType']
+
+    @property
+    def odometer(self):
+        return self.attrs['odometer']
+
+    @property
+    def fuel_amount_level(self):
+        return self.attrs['fuelAmountLevel']
+
+    @property
+    def distance_to_empty(self):
+        return self.attrs['distanceToEmpty']
+
+    @property
+    def is_honk_and_blink_supported(self):
+        return self.attrs['honkAndBlinkSupported']
+
+    @property
+    def doors(self):
+        return self.attrs['doors']
+
+    @property
+    def windows(self):
+        return self.attrs['windows']
+
+    @property
+    def is_lock_supported(self):
+        return self.attrs['lockSupported']
+
+    @property
+    def is_unlock_supported(self):
+        return self.attrs['unLockSupported']
+
+    @property
+    def is_locked(self):
+        return self.attrs['carLocked']
+
+    @property
+    def heater(self):
+        return self.attrs['heater']
+
+    @property
+    def is_remote_heater_supported(self):
+        return self.attrs['remoteHeaterSupported']
+
+    @property
+    def is_preclimatization_supported(self):
+        return self.attrs['preclimatizationSupported']
+
+    @property
+    def is_engine_start_supported(self):
+        return self.attrs['engineStartSupported']
+
+    #    def __repr__(self):
+#        return self.unique_id
+
+#    def __hash__(self):
+#        return hash(self.unique_id)
+
+#    def __eq__(self, other):
+#        return self.unique_id == other.unique_id
+
+#    def __ne__(self, other):
+#        return not(self == other)
+
+#    def __getattr__(self, name):
+#        try:
+#            return self.attrs[slug2camel(name)]
+#        except KeyError:
+#            raise AttributeError
+
+    @property
+    def attrs(self):
+        return self._connection.vehicle_attrs(self._url)
 
     @property
     def unique_id(self):
@@ -267,19 +329,14 @@ class Vehicle(object):
     @property
     def position_supported(self):
         """Return true if vehichle has position."""
-        return 'position' in self.properties
+        return 'position' in self.attrs
 
     @property
     def heater_supported(self):
         """Return true if vehichle has heater."""
-        return ((self.remote_heater_supported or
-                 self.preclimatization_supported) and
-                hasattr(self, 'heater'))
-
-    @property
-    def is_locked(self):
-        """Lock status."""
-        return self.car_locked
+        return ((self.is_remote_heater_supported or
+                 self.is_preclimatization_supported) and
+                'heater' in self.attrs)
 
     @property
     def is_heater_on(self):
@@ -293,46 +350,51 @@ class Vehicle(object):
         """Return trips."""
         return self.get('trips')
 
+    def honk_and_blink(self):
+        """Honk and blink."""
+        if self.is_honk_and_blink_supported:
+            self.call('honkAndBlink')
+
     def lock(self):
         """Lock."""
-        if self.lock_supported:
+        if self.is_lock_supported:
             self.call('lock')
         else:
             _LOGGER.warning('Lock not supported')
 
     def unlock(self):
         """Unlock."""
-        if self.unlock_supported:
+        if self.is_unlock_supported:
             self.call('unlock')
         else:
             _LOGGER.warning('Unlock not supported')
 
     def start_engine(self):
-        if self.engine_start_supported:
+        if self.is_engine_start_supported:
             self.call('engine/start', runtime=5)
         else:
             _LOGGER.warning('Engine start not supported.')
 
     def stop_engine(self):
-        if self.engine_start_supported:
+        if self.is_engine_start_supported:
             self.call('engine/stop')
         else:
             _LOGGER.warning('Engine stop not supported.')
 
     def start_heater(self):
         """Turn on/off heater."""
-        if self.remote_heater_supported:
+        if self.is_remote_heater_supported:
             self.call('heater/start')
-        elif self.preclimatization_supported:
+        elif self.is_preclimatization_supported:
             self.call('preclimatization/start')
         else:
             _LOGGER.warning('No heater or preclimatization support.')
 
     def stop_heater(self):
         """Turn on/off heater."""
-        if self.remote_heater_supported:
+        if self.is_remote_heater_supported:
             self.call('heater/stop')
-        elif self.preclimatization_supported:
+        elif self.is_preclimatization_supported:
             self.call('preclimatization/stop')
         else:
             _LOGGER.warning('No heater or preclimatization support.')
@@ -348,7 +410,7 @@ class Vehicle(object):
     def json(self):
         """Return JSON representation."""
         return to_json(
-            OrderedDict(sorted(self.properties.items())),
+            OrderedDict(sorted(self.attrs.items())),
             indent=4, default=json_serialize)
 
 
