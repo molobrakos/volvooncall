@@ -153,22 +153,16 @@ class Connection(object):
         return self._state.get(vehicle_url)
 
 
-def slug2camel(s):
-    """Convert foo_bar to fooBar.
-
-    >>> slug2camel('foo_bar')
-    'fooBar'
-
-    """
-    return re.sub('(_[a-z])', lambda match: match.group(1)[1:].upper(), s)
-
-
 class Vehicle(object):
     """Convenience wrapper around the state returned from the server."""
 
     def __init__(self, conn, url):
         self._connection = conn
         self._url = url
+
+    @property
+    def position(self):
+        return self.attrs['position']
 
     @property
     def registration_number(self):
