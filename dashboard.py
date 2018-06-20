@@ -265,6 +265,9 @@ class Heater(Switch):
 
 
 class Engine(Switch):
+
+    # FIXME: Should be a BinarySensor if engine start not supported?
+
     def __init__(self):
         super().__init__(attr='engineRunning',
                          name='Engine',
