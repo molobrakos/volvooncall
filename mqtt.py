@@ -34,6 +34,7 @@ TOPIC_PREFIX = 'volvo'
 
 CONF_OWNTRACKS_KEY = 'owntracks_key'
 
+
 def threadsafe(function):
     """ Synchronization decorator.
     The paho MQTT library runs the on_subscribe etc callbacks
@@ -212,12 +213,6 @@ class Entity:
         else:
             _LOGGER.error('Huh?')
 
-    def command(self, command):
-        if self.is_lock:
-            self.instrument.set(command == STATE_LOCK)
-        elif self.is_heater:
-            return (STATE_OFF, STATE_ON)[state]
-
     @threadsafe
     def publish(self, topic, payload, retain=False):
         payload = dump_json(payload) if isinstance(payload, dict) else payload
@@ -231,7 +226,7 @@ class Entity:
     @threadsafe
     def subscribe_to(self, topic):
         _LOGGER.debug('Subscribing to %s', topic)
-        res, mid =  self.client.subscribe(topic)
+        res, mid = self.client.subscribe(topic)
         if res == MQTT_ERR_SUCCESS:
             Entity.pending[mid] = (self, topic)
         else:
@@ -239,10 +234,13 @@ class Entity:
 
     @threadsafe
     def on_mqtt_message(self, userdata, message):
-        self.command(client, message.payload)
-
-    def command(self, command):
-        _LOGGER.warning(f'No command to execute for {self}: {command}')
+        command = message.payload
+        if self.is_lock:
+            self.instrument.set(command == STATE_LOCK)
+        elif self.is_switch:
+            self.instrument.set(command == STATE_ON)
+        else:
+            _LOGGER.warning(f'No command to execute for {self}: {command}')
 
     @property
     def is_sensor(self):
