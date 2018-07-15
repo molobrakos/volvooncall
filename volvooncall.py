@@ -6,7 +6,6 @@ import logging
 from datetime import timedelta, date, datetime
 from functools import partial
 from sys import argv, version_info
-import re
 from os import environ as env
 from os.path import join, dirname, expanduser
 from itertools import product
