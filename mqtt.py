@@ -10,6 +10,7 @@ from requests import certs
 from threading import current_thread
 from time import sleep
 from threading import RLock, Event
+import string
 import paho.mqtt.client as paho
 from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
@@ -33,6 +34,54 @@ DISCOVERY_PREFIX = 'homeassistant'
 TOPIC_PREFIX = 'volvo'
 
 CONF_OWNTRACKS_KEY = 'owntracks_key'
+
+
+def camel2slug(s):
+    """Convert camelCase to camel_case.
+
+    >>> camel2slug('fooBar')
+    foo_bar
+    """
+    return re.sub("([A-Z])", "_\\1", s).lower().lstrip("_")
+
+
+def whitelisted(s,
+                whitelist='_-' + string.ascii_letters + string.digits,
+                substitute='_'):
+    """
+    >>> whitelisted("ab/cd#ef(gh")
+    'ab_cd_ef_gh'
+
+    >>> whitelisted("ab/cd#ef(gh", substitute='')
+    'abcdefgh'
+   """
+    return ''.join(c if c in whitelist else substitute for c in s)
+
+
+def make_valid_hass_single_topic_level(s):
+    """Transform a multi level topic to a single level.
+
+    >>> make_valid_hass_single_topic_level('foo/bar/baz')
+    'foo_bar_baz'
+
+    >>> make_valid_hass_single_topic_level('hello å ä ö')
+    'hello'
+    """
+    return whitelisted(s)
+
+
+def make_topic(*levels):
+    """Create a valid topic.
+
+    >>> make_topic('foo', 'bar')
+    'foo/bar'
+
+    >>> make_topic(('foo', 'bar'))
+    'foo/bar'
+    """
+    if len(levels) == 1 and isinstance(levels[0], tuple):
+        return make_topic(*levels[0])
+    return '/'.join(levels)
 
 
 def threadsafe(function):
@@ -90,6 +139,7 @@ def on_disconnect(client, userdata, rc):
         _LOGGER.info('Disconnect successful')
     else:
         _LOGGER.warning('Disconnected, automatically reconnecting')
+        client.event_connected.clear()
 
 
 @threadsafe
@@ -125,6 +175,10 @@ class Entity:
         return self.instrument.vehicle
 
     @property
+    def attr(self):
+        return self.instrument.attr
+
+    @property
     def state(self):
         state = self.instrument.state
         if self.is_lock:
@@ -149,37 +203,46 @@ class Entity:
             return state
 
     @property
-    def attr(self):
-        return self.instrument.attr
+    def discovery_node_id(self):
+        return make_valid_hass_single_topic_level(make_topic(
+            TOPIC_PREFIX,
+            self.vehicle.unique_id))
 
     @property
-    def node_id(self):
-        return f'{TOPIC_PREFIX}_{self.vehicle.unique_id}'
+    def object_id(self):
+        return make_valid_hass_single_topic_level(self.attr)
 
     @property
     def discovery_topic(self):
-        return (f'{DISCOVERY_PREFIX}/{self.instrument.component}/'
-                f'{self.node_id}/{self.attr}/config')
+        return make_topic(DISCOVERY_PREFIX,
+                          self.instrument.component,
+                          self.discovery_node_id,
+                          self.object_id,
+                          'config')
 
     @property
     def topic(self):
-        return (f'{TOPIC_PREFIX}/{self.vehicle.unique_id}/'
-                f'{self.attr}')
+        return make_topic(TOPIC_PREFIX,
+                          self.vehicle.unique_id,
+                          self.object_id)
+
+    def make_topic(self, *levels):
+        return make_topic(self.topic, *levels)
 
     @property
     def state_topic(self):
         if self.is_position:
-            return f'owntracks/volvo/{self.vehicle.unique_id}'
+            return make_topic('owntracks', 'volvo', self.vehicle.unique_id)
         else:
-            return f'{self.topic}/state'
+            return self.make_topic('state')
 
     @property
     def availability_topic(self):
-        return f'{self.topic}/avail'
+        return self.make_topic('avail')
 
     @property
     def command_topic(self):
-        return f'{self.topic}/cmd'
+        return self.make_topic('cmd')
 
     @property
     def discovery_payload(self):
@@ -317,17 +380,19 @@ def run(voc, config):
                  port=int(mqtt_config['port']))
     mqtt.loop_start()
 
-    _LOGGER.debug('Waiting for MQTT connection')
-    mqtt.event_connected.wait()
-    _LOGGER.debug('Connected')
-
     interval = int(config['interval'])
     _LOGGER.info(f'Polling every {interval} seconds')
 
     entities = {}
 
     while True:
-        available = voc.update()
+
+        if not mqtt.event_connected.is_set():
+            _LOGGER.debug('Waiting for MQTT connection')
+            mqtt.event_connected.wait()
+            _LOGGER.debug('Connected')
+
+        available = True
         for vehicle in voc.vehicles:
             if vehicle not in entities:
                 _LOGGER.debug('creating vehicle %s', vehicle)
@@ -346,3 +411,4 @@ def run(voc, config):
                     entity.publish_state()
 
         sleep(interval)
+        available = voc.update()
