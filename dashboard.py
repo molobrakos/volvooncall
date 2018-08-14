@@ -85,7 +85,7 @@ class Instrument:
         if self.is_supported:
             _LOGGER.debug('%s is supported', self)
         else:
-            _LOGGER.warning('%s is NOT supported', self)
+            _LOGGER.warning('%s is not supported', self)
 
         return self.is_supported
 
