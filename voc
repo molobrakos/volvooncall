@@ -54,12 +54,9 @@ def lookup_position(lat, lon):
         import certifi
         import geopy.geocoders
         from geopy.geocoders import Nominatim
-
-        geopy.geocoders.options.default_ssl_context = ssl.create_default_context(cafile=certifi.where())
-        geopy.geocoders.options.default_timeout = 10
-        geopy.geocoders.options.default_user_agent='volvooncall/%s' % __version__
-        geolocator = Nominatim()
-        # geolocator = Nominatim(user_agent='volvooncall/%s' % __version__, timeout=10)
+        geolocator = Nominatim(user_agent='volvooncall/%s' % __version__,
+                               timeout=10,
+                               ssl_context=ssl.create_default_context(cafile=certifi.where()))
         return geolocator.reverse((lat, lon))
     except ImportError:
         _LOGGER.warning('geopy or certifi not installed. position lookup not available')
