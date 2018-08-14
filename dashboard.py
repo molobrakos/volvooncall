@@ -81,6 +81,12 @@ class Instrument:
     def setup(self, vehicle, config):
         self.vehicle = vehicle
         self.configurate(config)
+
+        if self.is_supported:
+            _LOGGER.debug('%s is supported', self)
+        else:
+            _LOGGER.warning('%s is NOT supported', self)
+
         return self.is_supported
 
     @property
@@ -136,7 +142,7 @@ class Sensor(Instrument):
 class FuelConsumption(Sensor):
 
     def __init__(self):
-        super().__init__(attr='average_fuel_consumption',
+        super().__init__(attr='averageFuelConsumption',
                          name='Fuel consumption',
                          icon='mdi:gas-station',
                          unit='L/100 km')
