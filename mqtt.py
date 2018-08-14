@@ -11,6 +11,7 @@ from threading import current_thread
 from time import sleep
 from threading import RLock, Event
 import string
+import re
 import paho.mqtt.client as paho
 from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
@@ -45,9 +46,12 @@ def camel2slug(s):
     return re.sub("([A-Z])", "_\\1", s).lower().lstrip("_")
 
 
+TOPIC_WHITELIST = '_-' + string.ascii_letters + string.digits
+TOPIC_SUBSTITUTE = '_'
+
 def whitelisted(s,
-                whitelist='_-' + string.ascii_letters + string.digits,
-                substitute='_'):
+                whitelist=TOPIC_WHITELIST,
+                substitute=TOPIC_SUBSTITUTE):
     """
     >>> whitelisted("ab/cd#ef(gh")
     'ab_cd_ef_gh'
@@ -210,7 +214,7 @@ class Entity:
 
     @property
     def object_id(self):
-        return make_valid_hass_single_topic_level(self.attr)
+        return make_valid_hass_single_topic_level(camel2slug(self.attr))
 
     @property
     def discovery_topic(self):
