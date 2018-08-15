@@ -21,6 +21,6 @@ RUN pip --no-cache-dir --trusted-host pypi.org install -r requirements.txt color
 
 USER voc
 
-COPY voc volvooncall.py mqtt.py ./
+COPY voc volvooncall.py mqtt.py dashboard.py ./
 
 ENTRYPOINT ["dumb-init", "--", "./voc", "mqtt"]
