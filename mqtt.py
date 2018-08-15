@@ -361,9 +361,9 @@ def run(voc, config):
 
     # FIXME: Allow MQTT credentials in voc.conf
 
-    client_id = 'voc_{hostname}_{pid}'.format(
+    client_id = 'voc_{hostname}_{time}'.format(
         hostname=hostname(),
-        pid=getpid())
+        time=time())
 
     mqtt_config = read_mqtt_config()
 
