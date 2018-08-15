@@ -41,7 +41,7 @@ def camel2slug(s):
     """Convert camelCase to camel_case.
 
     >>> camel2slug('fooBar')
-    foo_bar
+    'foo_bar'
     """
     return re.sub("([A-Z])", "_\\1", s).lower().lstrip("_")
 
@@ -70,7 +70,7 @@ def make_valid_hass_single_topic_level(s):
     'foo_bar_baz'
 
     >>> make_valid_hass_single_topic_level('hello å ä ö')
-    'hello'
+    'hello______'
     """
     return whitelisted(s)
 
