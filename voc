@@ -41,6 +41,7 @@ from time import time
 from json import dumps as to_json
 from sys import stderr
 from collections import OrderedDict
+from datetime import timezone
 from volvooncall import (__version__, read_credentials, Connection, json_serialize, owntracks_encrypt)
 
 _LOGGER = logging.getLogger(__name__)
@@ -154,7 +155,6 @@ def main():
         else:
 
             def fix_timezone(dt):
-                from datetime import timezone
                 return dt.astimezone(timezone.utc if args['--utc'] else None)
 
             for trip in vehicle.trips['trips']:
