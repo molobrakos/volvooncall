@@ -297,6 +297,7 @@ class Position(Instrument):
         return (super().state['latitude'],
                 super().state['longitude'])
 
+
 #  FIXME: Maybe make this list configurable as external yaml
 def create_instruments():
     return [
@@ -313,7 +314,7 @@ def create_instruments():
                icon='mdi:gas-station',
                unit='L'),
         Sensor(attr='fuelAmountLevel',
-            name='Fuel level',
+               name='Fuel level',
                icon='mdi:water-percent',
                unit='%'),
         FuelConsumption(),
@@ -402,6 +403,7 @@ class Dashboard():
             for instrument in create_instruments()
             if instrument.setup(vehicle, config)
         ]
+
 
 def create_dashboards(self, connection, config):
     return (Dashboard(vehicle, config) for vehicle in connection.vehicles)
