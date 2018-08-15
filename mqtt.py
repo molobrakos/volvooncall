@@ -49,6 +49,7 @@ def camel2slug(s):
 TOPIC_WHITELIST = '_-' + string.ascii_letters + string.digits
 TOPIC_SUBSTITUTE = '_'
 
+
 def whitelisted(s,
                 whitelist=TOPIC_WHITELIST,
                 substitute=TOPIC_SUBSTITUTE):
