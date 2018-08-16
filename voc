@@ -8,7 +8,7 @@ Usage:
   voc --version
   voc [-v|-vv] [options] list
   voc [-v|-vv] [options] status
-  voc [-v|-vv] [options] trips (--pretty|--json|--csv)
+  voc [-v|-vv] [options] trips [(--pretty|--json|--csv)]
   voc [-v|-vv] [options] owntracks
   voc [-v|-vv] [options] print [<attribute>]
   voc [-v|-vv] [options] (lock | unlock)
@@ -31,6 +31,7 @@ Options:
   -h --help             Show this message
   -v,-vv                Increase verbosity
   --scandinavian_miles  Report using Scandinavian miles instead of km ISO unit
+  --utc                 Print timestamps in UTC (+00:00) instead of local time
   --version             Show version
 """
 
@@ -40,6 +41,7 @@ from time import time
 from json import dumps as to_json
 from sys import stderr
 from collections import OrderedDict
+from datetime import timezone
 from volvooncall import (__version__, read_credentials, Connection, json_serialize, owntracks_encrypt)
 
 _LOGGER = logging.getLogger(__name__)
@@ -151,14 +153,19 @@ def main():
         if args['--json']:
             print(to_json(vehicle.trips, indent=4, default=json_serialize))
         else:
+
+            def fix_timezone(dt):
+                return dt.astimezone(timezone.utc if args['--utc'] else None)
+
             for trip in vehicle.trips['trips']:
-                print('%.19s %20.20s %-10.10s %.19s %10.10s %-10.10s' % (
-                    trip['tripDetails'][0]['startTime'],
-                    trip['tripDetails'][0]['startPosition']['streetAddress'],
-                    trip['tripDetails'][0]['startPosition']['city'],
-                    trip['tripDetails'][0]['endTime'],
-                    trip['tripDetails'][0]['endPosition']['streetAddress'],
-                    trip['tripDetails'][0]['endPosition']['city']))
+                trip = trip['tripDetails'][0]
+                print('%.29s %25s %-10.10s %25s %10.10s %-10.10s' % (
+                    fix_timezone(trip['startTime']),
+                    trip['startPosition']['streetAddress'],
+                    trip['startPosition']['city'],
+                    fix_timezone(trip['endTime']),
+                    trip['endPosition']['streetAddress'],
+                    trip['endPosition']['city']))
 
     elif args['print']:
         attr = args['<attribute>']

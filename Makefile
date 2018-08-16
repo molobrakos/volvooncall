@@ -32,17 +32,17 @@ pypi:
 release:
 	git diff-index --quiet HEAD -- && make toxlint && make toxtest && bumpversion patch && make pypi
 
-IMAGE=voc
+IMAGE=molobrakos/voc
 
 docker-build:
 	docker build -t $(IMAGE) .
 
 docker-run-mqtt:
 	docker run \
-                --name voc \
-		--restart always \
+                --name=voc \
+		--restart=always \
 		--detach \
-		--net bridge \
+		--net=bridge \
 		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
 		$(IMAGE) -vv
@@ -50,8 +50,8 @@ docker-run-mqtt:
 docker-run-mqtt-term:
 	docker run \
                 -ti --rm \
-                --name voc \
-		--net bridge \
+                --name=voc \
+		--net=bridge \
 		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
 		$(IMAGE) -vv
