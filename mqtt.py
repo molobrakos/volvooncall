@@ -26,10 +26,18 @@ _LOGGER = logging.getLogger(__name__)
 
 STATE_ON = 'on'
 STATE_OFF = 'off'
+
 STATE_ONLINE = 'online'
 STATE_OFFLINE = 'offline'
+
 STATE_LOCK = 'lock'
 STATE_UNLOCK = 'unlock'
+
+STATE_OPEN = 'open'
+STATE_CLOSE = 'close'
+
+STATE_SAFE = 'safe'
+STATE_UNSAFE = 'unsafe'
 
 DISCOVERY_PREFIX = 'homeassistant'
 TOPIC_PREFIX = 'volvo'
@@ -41,13 +49,14 @@ def camel2slug(s):
     """Convert camelCase to camel_case.
 
     >>> camel2slug('fooBar')
-    foo_bar
+    'foo_bar'
     """
     return re.sub("([A-Z])", "_\\1", s).lower().lstrip("_")
 
 
 TOPIC_WHITELIST = '_-' + string.ascii_letters + string.digits
 TOPIC_SUBSTITUTE = '_'
+
 
 def whitelisted(s,
                 whitelist=TOPIC_WHITELIST,
@@ -69,7 +78,7 @@ def make_valid_hass_single_topic_level(s):
     'foo_bar_baz'
 
     >>> make_valid_hass_single_topic_level('hello å ä ö')
-    'hello'
+    'hello______'
     """
     return whitelisted(s)
 
@@ -171,9 +180,6 @@ class Entity:
         self.instrument = instrument
         self.config = config
 
-    def __str__(self):
-        return str(self.instrument)
-
     @property
     def vehicle(self):
         return self.instrument.vehicle
@@ -183,11 +189,21 @@ class Entity:
         return self.instrument.attr
 
     @property
+    def name(self):
+        return self.instrument.full_name
+
+    @property
     def state(self):
         state = self.instrument.state
         if self.is_lock:
             return (STATE_UNLOCK, STATE_LOCK)[state]
         elif self.is_switch:
+            return (STATE_OFF, STATE_ON)[state]
+        elif self.is_opening:
+            return (STATE_CLOSE, STATE_OPEN)[state]
+        elif self.is_safety:
+            return (STATE_SAFE, STATE_UNSAFE)[state]
+        elif self.is_binary_sensor:
             return (STATE_OFF, STATE_ON)[state]
         elif self.is_position:
             lat, lon = state
@@ -261,6 +277,16 @@ class Entity:
             return dict(payload,
                         icon=instrument.icon,
                         unit_of_measurement=instrument.unit)
+        elif self.is_opening:
+            return dict(payload,
+                        payload_on=STATE_OPEN,
+                        payload_off=STATE_CLOSE,
+                        device_class=instrument.device_class)
+        elif self.is_safety:
+            return dict(payload,
+                        payload_on=STATE_UNSAFE,
+                        payload_off=STATE_SAFE,
+                        device_class=instrument.device_class)
         elif self.is_binary_sensor:
             return dict(payload,
                         payload_on=STATE_ON,
@@ -318,6 +344,14 @@ class Entity:
         return isinstance(self.instrument, BinarySensor)
 
     @property
+    def is_opening(self):
+        return self.is_binary_sensor and self.instrument.device_class in ['door', 'window']
+
+    @property
+    def is_safety(self):
+        return self.is_binary_sensor and self.instrument.device_class == 'safety'
+
+    @property
     def is_switch(self):
         return isinstance(self.instrument, Switch)
 
@@ -360,9 +394,9 @@ def run(voc, config):
 
     # FIXME: Allow MQTT credentials in voc.conf
 
-    client_id = 'voc_{hostname}_{pid}'.format(
+    client_id = 'voc_{hostname}_{time}'.format(
         hostname=hostname(),
-        pid=getpid())
+        time=time())
 
     mqtt_config = read_mqtt_config()
 
@@ -408,6 +442,9 @@ def run(voc, config):
 
                 for entity in entities[vehicle]:
                     entity.publish_discovery()
+
+            for entity in entities.get(vehicle, []):
+                _LOGGER.debug('%s: %s', entity.instrument.full_name, entity.state)
 
             for entity in entities[vehicle]:
                 entity.publish_availability(available)
