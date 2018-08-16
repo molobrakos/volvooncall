@@ -231,24 +231,6 @@ class Vehicle(object):
     def is_engine_start_supported(self):
         return self.attrs['engineStartSupported']
 
-    #    def __repr__(self):
-#        return self.unique_id
-
-#    def __hash__(self):
-#        return hash(self.unique_id)
-
-#    def __eq__(self, other):
-#        return self.unique_id == other.unique_id
-
-#    def __ne__(self, other):
-#        return not(self == other)
-
-#    def __getattr__(self, name):
-#        try:
-#            return self.attrs[slug2camel(name)]
-#        except KeyError:
-#            raise AttributeError
-
     @property
     def attrs(self):
         return self._connection.vehicle_attrs(self._url)
