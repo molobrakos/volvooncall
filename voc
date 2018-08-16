@@ -8,7 +8,7 @@ Usage:
   voc --version
   voc [-v|-vv] [options] list
   voc [-v|-vv] [options] status
-  voc [-v|-vv] [options] trips (--pretty|--json|--csv)
+  voc [-v|-vv] [options] trips [(--pretty|--json|--csv)]
   voc [-v|-vv] [options] owntracks
   voc [-v|-vv] [options] print [<attribute>]
   voc [-v|-vv] [options] (lock | unlock)
