@@ -270,14 +270,16 @@ class Heater(Switch):
             self.vehichle.stop_heater()
 
 
-class Engine(Switch):
-
-    # FIXME: Should be a BinarySensor if engine start not supported?
+class EngineStart(Switch):
 
     def __init__(self):
         super().__init__(attr='engineRunning',
                          name='Engine',
                          icon='mdi:engine')
+
+    @property
+    def is_supported(self):
+        return self.vehicle.is_engine_start_supported
 
     def set(self, state):
         if state:
@@ -335,7 +337,10 @@ def create_instruments():
                icon='mdi:clock',
                unit='minutes'),
         BatteryChargeStatus(),
-        Engine(),
+        EngineStart(),
+        BinarySensor(attr='engineRunning',
+                     name='Engine',
+                     device_class='power'),
         BinarySensor(attr='doors.hoodOpen',
                      name='Hood',
                      device_class='door'),
