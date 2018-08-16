@@ -160,6 +160,15 @@ class Vehicle(object):
         self._url = url
 
     @property
+    def attrs(self):
+        return self._connection.vehicle_attrs(self._url)
+
+    @property
+    def unique_id(self):
+        return (self.registration_number or
+                self.vin).lower()
+
+    @property
     def position(self):
         return self.attrs['position']
 
@@ -230,15 +239,6 @@ class Vehicle(object):
     @property
     def is_engine_start_supported(self):
         return self.attrs['engineStartSupported']
-
-    @property
-    def attrs(self):
-        return self._connection.vehicle_attrs(self._url)
-
-    @property
-    def unique_id(self):
-        return (self.registration_number or
-                self.vin).lower()
 
     def get(self, query):
         """Perform a query to the online service."""
