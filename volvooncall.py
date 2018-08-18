@@ -237,6 +237,10 @@ class Vehicle(object):
         return self.attrs['preclimatizationSupported']
 
     @property
+    def is_engine_running(self):
+        return self.attrs['engineRunning']
+
+    @property
     def is_engine_start_supported(self):
         return self.attrs['engineStartSupported']
 
