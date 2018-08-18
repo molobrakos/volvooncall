@@ -2,65 +2,10 @@
 
 import logging
 
+
 _LOGGER = logging.getLogger(__name__)
 
 CONF_SCANDINAVIAN_MILES = 'scandinavian_miles'
-
-
-def find_path(src, path):
-    """
-    >>> find_path(dict(a=1), 'a')
-    1
-
-    >>> find_path(dict(a=1), '')
-    {'a': 1}
-
-    >>> find_path(dict(a=None), 'a')
-
-
-    >>> find_path(dict(a=1), 'b')
-    Traceback (most recent call last):
-    ...
-    KeyError: 'b'
-
-    >>> find_path(dict(a=dict(b=1)), 'a.b')
-    1
-
-    >>> find_path(dict(a=dict(b=1)), 'a')
-    {'b': 1}
-
-    >>> find_path(dict(a=dict(b=1)), 'a.c')
-    Traceback (most recent call last):
-    ...
-    KeyError: 'c'
-
-    """
-    if not path:
-        return src
-    if isinstance(path, str):
-        path = path.split('.')
-    return find_path(src[path[0]], path[1:])
-
-
-def is_valid_path(src, path):
-    """
-    >>> is_valid_path(dict(a=1), 'a')
-    True
-
-    >>> is_valid_path(dict(a=1), '')
-    True
-
-    >>> is_valid_path(dict(a=1), None)
-    True
-
-    >>> is_valid_path(dict(a=1), 'b')
-    False
-    """
-    try:
-        find_path(src, path)
-        return True
-    except KeyError:
-        return False
 
 
 class Instrument:
@@ -104,7 +49,7 @@ class Instrument:
             return getattr(self.vehicle, supported)
         if hasattr(self.vehicle, self.attr):
             return True
-        return is_valid_path(self.vehicle.attrs, self.attr)
+        return self.vehicle.has_attr(self.attr)
 
     @property
     def str_state(self):
@@ -114,7 +59,7 @@ class Instrument:
     def state(self):
         if hasattr(self.vehicle, self.attr):
             return getattr(self.vehicle, self.attr)
-        return find_path(self.vehicle.attrs, self.attr)
+        return self.vehicle.get_attr(self.attr)
 
 
 class Sensor(Instrument):
