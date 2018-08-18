@@ -301,6 +301,7 @@ class Position(Instrument):
 
 
 #  FIXME: Maybe make this list configurable as external yaml
+#  FIXME: Expose drive journal (last trip?) as sensor
 def create_instruments():
     return [
         Position(),
