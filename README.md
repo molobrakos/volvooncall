@@ -38,7 +38,7 @@ Options:
   --version             Show version
 ```
 
-Retrieving basic status
+Retrieving basic status:
 ```
 > voc status
 ABC123 (XC60/2014) ABCD1234567890 92891km (fuel 25% 210km)
@@ -46,6 +46,29 @@ ABC123 (XC60/2014) ABCD1234567890 92891km (fuel 25% 210km)
     locked: yes
     heater: off
 ```
+
+Printing raw properties:
+```
+> voc print windows.frontLeftWindowOpen
+False
+./voc print fuelAmount
+45
+```
+
+Printing some relevant iofo:
+```
+> voc dashboard
+ABC123 Door lock: Locked
+ABC123 Heater: Off
+ABC123 Odometer: 12792 mil
+ABC123 Fuel amount: 32 L
+...
+```
+Periodically polling the VOC server and republishing all information to a MQTT server
+```
+> voc mqtt
+```
+
 Configuration file in `$HOME/.voc.conf`:
 ```
 username: <username>
