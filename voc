@@ -63,7 +63,16 @@ def lookup_position(lat, lon):
     except ImportError:
         _LOGGER.warning('geopy or certifi not installed. position lookup not available')
 
+
 def print_vehicle(vehicle, geolocate=False):
+
+
+    def yes_or_no(boolean):
+        return ('no', 'yes')[boolean]
+
+    def on_or_off(boolean):
+        return ('off', 'on')[boolean]
+
     s = '%s %dkm' % (
         vehicle,
         vehicle.odometer / 1000)
@@ -85,8 +94,9 @@ def print_vehicle(vehicle, geolocate=False):
     except AttributeError:
         pass
 
-    print('    locked: %s' % ('yes' if vehicle.is_locked else 'no'))
-    print('    heater: %s' % ('on' if vehicle.is_heater_on else 'off'))
+    print('    engine: %s' % on_or_off(vehicle.is_engine_running))
+    print('    locked: %s' % yes_or_no(vehicle.is_locked))
+    print('    heater: %s' % on_or_off(vehicle.is_heater_on))
 
 
 def main():
