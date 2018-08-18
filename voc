@@ -180,9 +180,9 @@ def main():
     elif args['print']:
         attr = args['<attribute>']
         if attr:
-            if not attr in vehicle.properties:
+            if not vehicle.has_attr(attr):
                 exit('unknown attribute')
-            print(vehicle.properties[attr])
+            print(vehicle.get_attr(attr))
         else:
             print(vehicle.json)
     elif args['owntracks']:
