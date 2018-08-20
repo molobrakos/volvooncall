@@ -2,65 +2,10 @@
 
 import logging
 
+
 _LOGGER = logging.getLogger(__name__)
 
 CONF_SCANDINAVIAN_MILES = 'scandinavian_miles'
-
-
-def find_path(src, path):
-    """
-    >>> find_path(dict(a=1), 'a')
-    1
-
-    >>> find_path(dict(a=1), '')
-    {'a': 1}
-
-    >>> find_path(dict(a=None), 'a')
-
-
-    >>> find_path(dict(a=1), 'b')
-    Traceback (most recent call last):
-    ...
-    KeyError: 'b'
-
-    >>> find_path(dict(a=dict(b=1)), 'a.b')
-    1
-
-    >>> find_path(dict(a=dict(b=1)), 'a')
-    {'b': 1}
-
-    >>> find_path(dict(a=dict(b=1)), 'a.c')
-    Traceback (most recent call last):
-    ...
-    KeyError: 'c'
-
-    """
-    if not path:
-        return src
-    if isinstance(path, str):
-        path = path.split('.')
-    return find_path(src[path[0]], path[1:])
-
-
-def is_valid_path(src, path):
-    """
-    >>> is_valid_path(dict(a=1), 'a')
-    True
-
-    >>> is_valid_path(dict(a=1), '')
-    True
-
-    >>> is_valid_path(dict(a=1), None)
-    True
-
-    >>> is_valid_path(dict(a=1), 'b')
-    False
-    """
-    try:
-        find_path(src, path)
-        return True
-    except KeyError:
-        return False
 
 
 class Instrument:
@@ -104,7 +49,7 @@ class Instrument:
             return getattr(self.vehicle, supported)
         if hasattr(self.vehicle, self.attr):
             return True
-        return is_valid_path(self.vehicle.attrs, self.attr)
+        return self.vehicle.has_attr(self.attr)
 
     @property
     def str_state(self):
@@ -114,7 +59,7 @@ class Instrument:
     def state(self):
         if hasattr(self.vehicle, self.attr):
             return getattr(self.vehicle, self.attr)
-        return find_path(self.vehicle.attrs, self.attr)
+        return self.vehicle.get_attr(self.attr)
 
 
 class Sensor(Instrument):
@@ -270,14 +215,16 @@ class Heater(Switch):
             self.vehichle.stop_heater()
 
 
-class Engine(Switch):
-
-    # FIXME: Should be a BinarySensor if engine start not supported?
+class EngineStart(Switch):
 
     def __init__(self):
         super().__init__(attr='engineRunning',
                          name='Engine',
                          icon='mdi:engine')
+
+    @property
+    def is_supported(self):
+        return self.vehicle.is_engine_start_supported
 
     def set(self, state):
         if state:
@@ -299,6 +246,7 @@ class Position(Instrument):
 
 
 #  FIXME: Maybe make this list configurable as external yaml
+#  FIXME: Expose drive journal (last trip?) as sensor
 def create_instruments():
     return [
         Position(),
@@ -335,7 +283,10 @@ def create_instruments():
                icon='mdi:clock',
                unit='minutes'),
         BatteryChargeStatus(),
-        Engine(),
+        EngineStart(),
+        BinarySensor(attr='engineRunning',
+                     name='Engine',
+                     device_class='power'),
         BinarySensor(attr='doors.hoodOpen',
                      name='Hood',
                      device_class='door'),
