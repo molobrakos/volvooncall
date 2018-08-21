@@ -16,7 +16,6 @@ import paho.mqtt.client as paho
 from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
 from platform import node as hostname
-from os import getpid
 from dashboard import (Dashboard,
                        Lock, Position,
                        Heater, Sensor,
@@ -345,11 +344,13 @@ class Entity:
 
     @property
     def is_opening(self):
-        return self.is_binary_sensor and self.instrument.device_class in ['door', 'window']
+        return (self.is_binary_sensor and
+                self.instrument.device_class in ['door', 'window'])
 
     @property
     def is_safety(self):
-        return self.is_binary_sensor and self.instrument.device_class == 'safety'
+        return (self.is_binary_sensor and
+                self.instrument.device_class == 'safety')
 
     @property
     def is_switch(self):
@@ -379,7 +380,8 @@ class Entity:
         if self.is_position:
             return
         self.publish(self.availability_topic,
-                     STATE_ONLINE if available and self.state is not None else
+                     STATE_ONLINE if available and
+                     self.state is not None else
                      STATE_OFFLINE)
 
     def publish_state(self):
@@ -444,7 +446,8 @@ def run(voc, config):
                     entity.publish_discovery()
 
             for entity in entities.get(vehicle, []):
-                _LOGGER.debug('%s: %s', entity.instrument.full_name, entity.state)
+                _LOGGER.debug('%s: %s',
+                              entity.instrument.full_name, entity.state)
 
             for entity in entities[vehicle]:
                 entity.publish_availability(available)
