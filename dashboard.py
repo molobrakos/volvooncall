@@ -178,9 +178,9 @@ class Lock(Instrument):
 
     def command(self, command):
         if self.state:
-            self.vehichle.lock()
+            self.vehicle.lock()
         else:
-            self.vehichle.unlock()
+            self.vehicle.unlock()
 
 
 class Switch(Instrument):
@@ -210,9 +210,9 @@ class Heater(Switch):
 
     def set(self, state):
         if state:
-            self.vehichle.start_heater()
+            self.vehicle.start_heater()
         else:
-            self.vehichle.stop_heater()
+            self.vehicle.stop_heater()
 
 
 class EngineStart(Switch):
@@ -228,9 +228,9 @@ class EngineStart(Switch):
 
     def set(self, state):
         if state:
-            self.vehichle.start_engine()
+            self.vehicle.start_engine()
         else:
-            self.vehichle.stop_engine()
+            self.vehicle.stop_engine()
 
 
 class Position(Instrument):
