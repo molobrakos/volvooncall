@@ -376,12 +376,12 @@ class Vehicle(object):
 
     @property
     def position_supported(self):
-        """Return true if vehichle has position."""
+        """Return true if vehicle has position."""
         return 'position' in self.attrs
 
     @property
     def heater_supported(self):
-        """Return true if vehichle has heater."""
+        """Return true if vehicle has heater."""
         return ((self.is_remote_heater_supported or
                  self.is_preclimatization_supported) and
                 'heater' in self.attrs)
