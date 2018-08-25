@@ -52,6 +52,63 @@ def json_serialize(obj):
     raise TypeError("Type %s not serializable" % type(obj))
 
 
+def find_path(src, path):
+    """Simple navigation of a hierarchical dict structure using XPATH-like syntax.
+
+    >>> find_path(dict(a=1), 'a')
+    1
+
+    >>> find_path(dict(a=1), '')
+    {'a': 1}
+
+    >>> find_path(dict(a=None), 'a')
+
+
+    >>> find_path(dict(a=1), 'b')
+    Traceback (most recent call last):
+    ...
+    KeyError: 'b'
+
+    >>> find_path(dict(a=dict(b=1)), 'a.b')
+    1
+
+    >>> find_path(dict(a=dict(b=1)), 'a')
+    {'b': 1}
+
+    >>> find_path(dict(a=dict(b=1)), 'a.c')
+    Traceback (most recent call last):
+    ...
+    KeyError: 'c'
+
+    """
+    if not path:
+        return src
+    if isinstance(path, str):
+        path = path.split('.')
+    return find_path(src[path[0]], path[1:])
+
+
+def is_valid_path(src, path):
+    """
+    >>> is_valid_path(dict(a=1), 'a')
+    True
+
+    >>> is_valid_path(dict(a=1), '')
+    True
+
+    >>> is_valid_path(dict(a=1), None)
+    True
+
+    >>> is_valid_path(dict(a=1), 'b')
+    False
+    """
+    try:
+        find_path(src, path)
+        return True
+    except KeyError:
+        return False
+
+
 def owntracks_encrypt(msg, key):
     try:
         from libnacl import crypto_secretbox_KEYBYTES as keylen
@@ -163,6 +220,12 @@ class Vehicle(object):
     def attrs(self):
         return self._connection.vehicle_attrs(self._url)
 
+    def has_attr(self, attr):
+        return is_valid_path(self.attrs, attr)
+
+    def get_attr(self, attr):
+        return find_path(self.attrs, attr)
+
     @property
     def unique_id(self):
         return (self.registration_number or
@@ -237,6 +300,10 @@ class Vehicle(object):
         return self.attrs['preclimatizationSupported']
 
     @property
+    def is_engine_running(self):
+        return self.attrs['engineRunning']
+
+    @property
     def is_engine_start_supported(self):
         return self.attrs['engineStartSupported']
 
@@ -309,12 +376,12 @@ class Vehicle(object):
 
     @property
     def position_supported(self):
-        """Return true if vehichle has position."""
+        """Return true if vehicle has position."""
         return 'position' in self.attrs
 
     @property
     def heater_supported(self):
-        """Return true if vehichle has heater."""
+        """Return true if vehicle has heater."""
         return ((self.is_remote_heater_supported or
                  self.is_preclimatization_supported) and
                 'heater' in self.attrs)
