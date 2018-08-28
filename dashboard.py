@@ -30,7 +30,8 @@ class Instrument:
         if self.is_supported:
             _LOGGER.debug('%s is supported', self)
         else:
-            _LOGGER.warning('%s is not supported', self)
+            _LOGGER.warning('%s (%s:%s) is not supported', self,
+                            type(self).__name__, self.attr)
 
         return self.is_supported
 
@@ -153,13 +154,13 @@ class BinarySensor(Instrument):
 
 class BatteryChargeStatus(BinarySensor):
     def __init__(self):
-        super().__init__('hvBattery.hvBatteryChargeStatus',
+        super().__init__('hvBattery.hvBatteryChargeStatusDerived',
                          'Battery charging',
                          'plug')
 
     @property
     def state(self):
-        return super(BinarySensor, self).state != 'plugRemoved'
+        return super(BinarySensor, self).state == 'CablePluggedInCar_Charging'
 
 
 class Lock(Instrument):
@@ -279,7 +280,7 @@ def create_instruments():
                icon='mdi:battery',
                unit='%'),
         Sensor(attr='hvBattery.timeToHVBatteryFullyCharged',
-               name='Battery Range',
+               name='Time to fully charged',
                icon='mdi:clock',
                unit='minutes'),
         BatteryChargeStatus(),
