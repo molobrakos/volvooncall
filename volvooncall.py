@@ -16,6 +16,8 @@ from base64 import b64encode
 from requests import Session, RequestException
 from requests.compat import urljoin
 
+from dashboard import Dashboard
+
 _ = version_info >= (3, 0) or exit('Python 3 required')
 
 __version__ = '0.5.0'
@@ -32,6 +34,9 @@ HEADERS = {'X-Device-Id': 'Device',
            'Content-Type': 'application/json'}
 
 TIMEOUT = timedelta(seconds=30)
+
+
+_LOGGER.debug('Loaded %s version: %s', __name__, __version__)
 
 
 def _obj_parser(obj):
@@ -134,7 +139,7 @@ class Connection(object):
     def __init__(self, username, password,
                  service_url=None, region=None, **_):
         """Initialize."""
-        _LOGGER.info('%s version: %s', __name__, __version__)
+        _LOGGER.info('Initializing %s version: %s', __name__, __version__)
 
         self._session = Session()
         self._service_url = SERVICE_URL.format(region='-'+region) \
@@ -215,6 +220,7 @@ class Vehicle(object):
     def __init__(self, conn, url):
         self._connection = conn
         self._url = url
+        self._dashboard = None
 
     @property
     def attrs(self):
@@ -453,6 +459,12 @@ class Vehicle(object):
             self.vehicle_type,
             self.model_year,
             self.vin)
+
+    @property
+    def dashboard(self):
+        if not self._dashboard:
+            self._dashboard = Dashboard(self, {})
+        return self._dashboard
 
     @property
     def json(self):
