@@ -306,6 +306,10 @@ class Vehicle(object):
         return self.attrs['preclimatizationSupported']
 
     @property
+    def is_journal_supported(self):
+        return self.attrs['journalLogSupported'] and self.attrs['journalLogEnabled']
+
+    @property
     def is_engine_running(self):
         return self.attrs['engineRunning']
 
