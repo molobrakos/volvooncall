@@ -194,6 +194,8 @@ class Connection(object):
                     self.get('status', url))
                 self._state[url].update(
                     self.get('position', url))
+                self._state[url].update(
+                    self.get('trips', url))
                 _LOGGER.debug('State: %s', self._state)
             return True
         except (IOError, OSError) as error:
@@ -406,7 +408,7 @@ class Vehicle(object):
     @property
     def trips(self):
         """Return trips."""
-        return self.get('trips')
+        return self.attrs['trips']
 
     def honk_and_blink(self):
         """Honk and blink."""
