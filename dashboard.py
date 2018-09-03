@@ -124,6 +124,31 @@ class Odometer(Sensor):
             return int(round(val / 1000))  # m->km
 
 
+class JournalLastTrip(Instrument):
+
+    def __init__(self):
+        super().__init__(component='sensor',
+                         attr=None,
+                         name='Last trip',
+                         icon='mdi:book-open')
+
+    @property
+    def is_supported(self):
+        return self.vehicle.is_journal_supported
+
+    @property
+    def state(self):
+        if self.vehicle.trips:
+            trip = self.vehicle.trips['trips'][0]['tripDetails'][0]
+            return '{start_address}, {start_city} @ {start_time} - {end_address}, {end_city} @ {end_time}'.format(
+                start_address = trip['startPosition']['streetAddress'],
+                start_city = trip['startPosition']['city'],
+                start_time = trip['startTime'].astimezone(None),
+                end_address = trip['endPosition']['streetAddress'],
+                end_city = trip['endPosition']['city'],
+                end_time = trip['endTime'].astimezone(None))
+
+
 class BinarySensor(Instrument):
     def __init__(self, attr, name, device_class):
         super().__init__('binary_sensor', attr, name)
@@ -285,6 +310,7 @@ def create_instruments():
                unit='minutes'),
         BatteryChargeStatus(),
         EngineStart(),
+        JournalLastTrip(),
         BinarySensor(attr='engineRunning',
                      name='Engine',
                      device_class='power'),
