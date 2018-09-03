@@ -139,7 +139,7 @@ class JournalLastTrip(Instrument):
     @property
     def state(self):
         if self.vehicle.trips:
-            trip = self.vehicle.trips['trips'][0]['tripDetails'][0]
+            trip = self.vehicle.trips[0]['tripDetails'][0]
             return '{start_address}, {start_city} @ {start_time} - {end_address}, {end_city} @ {end_time}'.format(
                 start_address = trip['startPosition']['streetAddress'],
                 start_city = trip['startPosition']['city'],
