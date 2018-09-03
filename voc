@@ -167,7 +167,7 @@ def main():
             def fix_timezone(dt):
                 return dt.astimezone(timezone.utc if args['--utc'] else None)
 
-            for trip in vehicle.trips['trips']:
+            for trip in vehicle.trips:
                 trip = trip['tripDetails'][0]
                 print('%.29s %25s %-10.10s %25s %10.10s %-10.10s' % (
                     fix_timezone(trip['startTime']),
