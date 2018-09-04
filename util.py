@@ -111,6 +111,9 @@ def whitelisted(s,
                 substitute=''):
     """
     >>> whitelisted("ab/cd#ef(gh")
+    'abcdefgh'
+
+    >>> whitelisted("ab/cd#ef(gh", substitute="_")
     'ab_cd_ef_gh'
 
     >>> whitelisted("ab/cd#ef(gh", substitute='')
