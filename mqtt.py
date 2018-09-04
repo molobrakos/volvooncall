@@ -9,9 +9,8 @@ from os import environ as env
 from requests import certs
 from threading import current_thread
 from time import sleep
-from threading import RLock, Event
+from threading import Event
 import string
-import re
 import paho.mqtt.client as paho
 from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
@@ -274,7 +273,9 @@ class Entity:
 
     @threadsafe
     def publish(self, topic, payload, retain=False):
-        payload = dump_json(payload) if isinstance(payload, dict) else str(payload)
+        payload = (dump_json(payload)
+                   if isinstance(payload, dict)
+                   else str(payload))
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
         res, mid = self.client.publish(topic, payload, retain=retain)
         if res == MQTT_ERR_SUCCESS:
