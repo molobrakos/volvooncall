@@ -140,13 +140,14 @@ class JournalLastTrip(Instrument):
     def state(self):
         if self.vehicle.trips:
             trip = self.vehicle.trips[0]['tripDetails'][0]
-            return '{start_address}, {start_city} @ {start_time} - {end_address}, {end_city} @ {end_time}'.format(
+            return '{start_address}, {start_city} @ {start_time} - {end_address}, {end_city} @ {end_time} ({duration})'.format(
                 start_address = trip['startPosition']['streetAddress'],
                 start_city = trip['startPosition']['city'],
                 start_time = trip['startTime'].astimezone(None),
                 end_address = trip['endPosition']['streetAddress'],
                 end_city = trip['endPosition']['city'],
-                end_time = trip['endTime'].astimezone(None))
+                end_time = trip['endTime'].astimezone(None),
+                duration = trip['endTime'] - trip['startTime'])
 
 
 class BinarySensor(Instrument):
