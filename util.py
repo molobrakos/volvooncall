@@ -4,6 +4,7 @@ from string import ascii_letters as letters, digits
 from threading import RLock
 import re
 
+
 def obj_parser(obj):
     """Parse datetime."""
     for key, val in obj.items():
@@ -123,6 +124,8 @@ def whitelisted(s,
 
 
 LOCK = RLock()
+
+
 def threadsafe(function):
     """ Synchronization decorator.
     The paho MQTT library runs the on_subscribe etc callbacks
