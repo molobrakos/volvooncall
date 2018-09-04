@@ -240,8 +240,12 @@ class Lock(Instrument):
         return 'Locked' if self.state else 'Unlocked'
 
     @property
-    def is_locked(self):
+    def state(self):
         return self.vehicle.is_locked
+
+    @property
+    def is_locked(self):
+        return self.state
 
     def lock(self):
         self.vehicle.lock()
