@@ -29,8 +29,8 @@ class Instrument:
         if self.is_supported:
             _LOGGER.debug('%s is supported', self)
         else:
-            _LOGGER.warning('%s (%s:%s) is not supported', self,
-                            type(self).__name__, self.attr)
+            _LOGGER.debug('%s (%s:%s) is not supported', self,
+                          type(self).__name__, self.attr)
 
         return self.is_supported
 
