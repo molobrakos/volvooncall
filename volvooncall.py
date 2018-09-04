@@ -466,9 +466,9 @@ class Vehicle(object):
             self.vin)
 
     @property
-    def dashboard(self, config=None):
-        from dashboard import Dashboard
-        return Dashboard(self, config)
+    def dashboard(self, scandinavian_miles=False):
+        from dashboard import Dashboard, CONF_SCANDINAVIAN_MILES
+        return Dashboard(self, dict(CONF_SCANDINAVIAN_MILES=scandinavian_miles))
 
     @property
     def json(self):
