@@ -16,7 +16,6 @@ from base64 import b64encode
 from requests import Session, RequestException
 from requests.compat import urljoin
 
-from dashboard import Dashboard
 
 _ = version_info >= (3, 0) or exit('Python 3 required')
 
@@ -222,7 +221,6 @@ class Vehicle(object):
     def __init__(self, conn, url):
         self._connection = conn
         self._url = url
-        self._dashboard = None
 
     @property
     def attrs(self):
@@ -467,10 +465,9 @@ class Vehicle(object):
             self.vin)
 
     @property
-    def dashboard(self):
-        if not self._dashboard:
-            self._dashboard = Dashboard(self, {})
-        return self._dashboard
+    def dashboard(self, config=None):
+        from dashboard import Dashboard
+        return Dashboard(self, config)
 
     @property
     def json(self):
