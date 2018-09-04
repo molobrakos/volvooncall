@@ -10,7 +10,7 @@ setup(name="volvooncall",
       author="Erik",
       author_email="error.errorsson@gmail.com",
       scripts=["voc"],
-      py_modules=["volvooncall", "mqtt", "dashboard"],
+      py_modules=["volvooncall", "mqtt", "util", "dashboard"],
       provides=["volvooncall"],
       install_requires=list(
           open('requirements.txt').read().strip().split('\n')),
