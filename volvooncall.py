@@ -3,7 +3,7 @@
 """Communicate with VOC server."""
 
 import logging
-from datetime import timedelta, date
+from datetime import timedelta
 from functools import partial
 from sys import argv, version_info
 from os import environ as env

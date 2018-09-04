@@ -388,4 +388,5 @@ class Dashboard:
 
     def configurate(self, scandinavian_miles=False):
         for instrument in self.instruments:
-            instrument.configurate(dict(CONF_SCANDINAVIAN_MILES=scandinavian_miles))
+            instrument.configurate(dict(
+                CONF_SCANDINAVIAN_MILES=scandinavian_miles))
