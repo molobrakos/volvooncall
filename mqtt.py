@@ -20,6 +20,7 @@ from dashboard import (Dashboard,
                        Lock, Position,
                        Heater, Sensor,
                        BinarySensor, Switch)
+from util import camel2slug, threadsafe, whitelisted
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,30 +45,8 @@ TOPIC_PREFIX = 'volvo'
 CONF_OWNTRACKS_KEY = 'owntracks_key'
 
 
-def camel2slug(s):
-    """Convert camelCase to camel_case.
-
-    >>> camel2slug('fooBar')
-    'foo_bar'
-    """
-    return re.sub("([A-Z])", "_\\1", s).lower().lstrip("_")
-
-
 TOPIC_WHITELIST = '_-' + string.ascii_letters + string.digits
 TOPIC_SUBSTITUTE = '_'
-
-
-def whitelisted(s,
-                whitelist=TOPIC_WHITELIST,
-                substitute=TOPIC_SUBSTITUTE):
-    """
-    >>> whitelisted("ab/cd#ef(gh")
-    'ab_cd_ef_gh'
-
-    >>> whitelisted("ab/cd#ef(gh", substitute='')
-    'abcdefgh'
-   """
-    return ''.join(c if c in whitelist else substitute for c in s)
 
 
 def make_valid_hass_single_topic_level(s):
@@ -79,7 +58,7 @@ def make_valid_hass_single_topic_level(s):
     >>> make_valid_hass_single_topic_level('hello å ä ö')
     'hello______'
     """
-    return whitelisted(s)
+    return whitelisted(s, TOPIC_WHITELIST, TOPIC_SUBSTITUTE)
 
 
 def make_topic(*levels):
@@ -94,17 +73,6 @@ def make_topic(*levels):
     if len(levels) == 1 and isinstance(levels[0], tuple):
         return make_topic(*levels[0])
     return '/'.join(levels)
-
-
-def threadsafe(function):
-    """ Synchronization decorator.
-    The paho MQTT library runs the on_subscribe etc callbacks
-    in its own thread and since we keep track of subscriptions etc
-    in Device.subscriptions, we need to synchronize threads."""
-    def wrapper(*args, **kw):
-        with Entity.lock:
-            return function(*args, **kw)
-    return wrapper
 
 
 def read_mqtt_config():
@@ -172,7 +140,6 @@ class Entity:
 
     pending = {}
     entities = []
-    lock = RLock()
 
     def __init__(self, client, instrument, config):
         self.client = client
@@ -328,9 +295,15 @@ class Entity:
     def on_mqtt_message(self, userdata, message):
         command = message.payload
         if self.is_lock:
-            self.instrument.set(command == STATE_LOCK)
+            if command == STATE_LOCK:
+                self.instrument.lock()
+            else:
+                self.instrument.unlock()
         elif self.is_switch:
-            self.instrument.set(command == STATE_ON)
+            if command == STATE_ON:
+                self.instrument.turn_on()
+            else:
+                self.instrument.turn_off()
         else:
             _LOGGER.warning(f'No command to execute for {self}: {command}')
 
@@ -436,11 +409,14 @@ def run(voc, config):
         for vehicle in voc.vehicles:
             if vehicle not in entities:
                 _LOGGER.debug('creating vehicle %s', vehicle)
+
+                dashboard = Dashboard(vehicle)
+                dashboard.configurate(**config)
+
                 entities[vehicle] = [Entity(mqtt,
                                             instrument,
                                             config)
-                                     for instrument in Dashboard(
-                                             vehicle, config).instruments]
+                                     for instrument in dashboard.instruments]
 
                 for entity in entities[vehicle]:
                     entity.publish_discovery()
