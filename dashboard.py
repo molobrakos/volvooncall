@@ -378,7 +378,7 @@ def create_instruments():
     ]
 
 
-class Dashboard():
+class Dashboard:
     def __init__(self, vehicle, config):
         self.instruments = [
             instrument
