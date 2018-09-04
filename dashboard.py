@@ -23,9 +23,8 @@ class Instrument:
     def configurate(self, config):
         pass
 
-    def setup(self, vehicle, config):
+    def setup(self, vehicle):
         self.vehicle = vehicle
-        self.configurate(config)
 
         if self.is_supported:
             _LOGGER.debug('%s is supported', self)
@@ -124,12 +123,12 @@ class Odometer(Sensor):
             return int(round(val / 1000))  # m->km
 
 
-class JournalLastTrip(Instrument):
+class JournalLastTrip(Sensor):
 
     def __init__(self):
-        super().__init__(component='sensor',
-                         attr=None,
+        super().__init__(attr='trips',
                          name='Last trip',
+                         unit=None,
                          icon='mdi:book-open')
 
     @property
@@ -265,7 +264,7 @@ class EngineStart(Switch):
 
 class Position(Instrument):
     def __init__(self):
-        super().__init__(component=None,
+        super().__init__(component='device_tracker',
                          attr='position',
                          name='Position')
 
@@ -379,9 +378,14 @@ def create_instruments():
 
 
 class Dashboard:
-    def __init__(self, vehicle, config):
+
+    def __init__(self, vehicle):
         self.instruments = [
             instrument
             for instrument in create_instruments()
-            if instrument.setup(vehicle, config)
+            if instrument.setup(vehicle)
         ]
+
+    def configurate(self, scandinavian_miles=False):
+        for instrument in self.instruments:
+            instrument.configurate(dict(CONF_SCANDINAVIAN_MILES=scandinavian_miles))
