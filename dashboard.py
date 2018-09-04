@@ -65,7 +65,7 @@ class Instrument:
 
     @property
     def attributes(self):
-        pass
+        return {}
 
 
 class Sensor(Instrument):
