@@ -1,11 +1,9 @@
 #  Utilities for integration with Home Assistant (directly or via MQTT)
 
 import logging
-
+from util import camel2slug
 
 _LOGGER = logging.getLogger(__name__)
-
-CONF_SCANDINAVIAN_MILES = 'scandinavian_miles'
 
 
 class Instrument:
@@ -20,8 +18,12 @@ class Instrument:
     def __repr__(self):
         return self.full_name
 
-    def configurate(self, config):
+    def configurate(self, scandinavian_miles):
         pass
+
+    @property
+    def slug_attr(self):
+        return camel2slug(self.attr.replace('.', '_'))
 
     def setup(self, vehicle):
         self.vehicle = vehicle
@@ -61,14 +63,18 @@ class Instrument:
             return getattr(self.vehicle, self.attr)
         return self.vehicle.get_attr(self.attr)
 
+    @property
+    def attributes(self):
+        pass
+
 
 class Sensor(Instrument):
     def __init__(self, attr, name, icon, unit):
         super().__init__('sensor', attr, name, icon)
         self.unit = unit
 
-    def configurate(self, config):
-        if (CONF_SCANDINAVIAN_MILES in config and 'km' in self.unit):
+    def configurate(self, scandinavian_miles):
+        if self.unit and scandinavian_miles and 'km' in self.unit:
             self.unit = 'mil'
 
     @property
@@ -92,8 +98,8 @@ class FuelConsumption(Sensor):
                          icon='mdi:gas-station',
                          unit='L/100 km')
 
-    def configurate(self, config):
-        if CONF_SCANDINAVIAN_MILES in config:
+    def configurate(self, scandinavian_miles):
+        if scandinavian_miles:
             self.unit = 'L/mil'
 
     @property
@@ -136,20 +142,48 @@ class JournalLastTrip(Sensor):
         return self.vehicle.is_journal_supported
 
     @property
-    def state(self):
+    def trip(self):
         if self.vehicle.trips:
-            trip = self.vehicle.trips[0]['tripDetails'][0]
-            return (
-                '{start_address}, {start_city} @ {start_time} - '
-                '{end_address}, {end_city} @ {end_time} '
-                '({duration})').format(
-                    start_address=trip['startPosition']['streetAddress'],
-                    start_city=trip['startPosition']['city'],
-                    start_time=trip['startTime'].astimezone(None),
-                    end_address=trip['endPosition']['streetAddress'],
-                    end_city=trip['endPosition']['city'],
-                    end_time=trip['endTime'].astimezone(None),
-                    duration=trip['endTime'] - trip['startTime'])
+            return self.vehicle.trips[0]['tripDetails'][0]
+
+    @property
+    def start_address(self):
+        return '{}, {}'.format(
+            self.trip['startPosition']['streetAddress'],
+            self.trip['startPosition']['city'])
+
+    @property
+    def end_address(self):
+        return '{}, {}'.format(
+            self.trip['endPosition']['streetAddress'],
+            self.trip['endPosition']['city'])
+
+    @property
+    def start_time(self):
+        return self.trip['startTime'].astimezone(None)
+
+    @property
+    def end_time(self):
+        return self.trip['endTime'].astimezone(None)
+
+    @property
+    def duration(self):
+        return self.end_time - self.start_time
+
+    @property
+    def state(self):
+        if self.trip:
+            return self.end_time
+
+    @property
+    def attributes(self):
+        if self.trip:
+            return dict(
+                start_address=self.start_address,
+                start_time=self.start_time,
+                end_address=self.end_address,
+                end_time=self.end_time,
+                duration=self.duration)
 
 
 class BinarySensor(Instrument):
@@ -179,6 +213,10 @@ class BinarySensor(Instrument):
         else:
             _LOGGER.error('Can not encode state %s:%s', val, type(val))
 
+    @property
+    def is_on(self):
+        return self.state
+
 
 class BatteryChargeStatus(BinarySensor):
     def __init__(self):
@@ -202,14 +240,14 @@ class Lock(Instrument):
         return 'Locked' if self.state else 'Unlocked'
 
     @property
-    def state(self):
+    def is_locked(self):
         return self.vehicle.is_locked
 
-    def command(self, command):
-        if self.state:
-            self.vehicle.lock()
-        else:
-            self.vehicle.unlock()
+    def lock(self):
+        self.vehicle.lock()
+
+    def unlock(self):
+        self.vehicle.unlock()
 
 
 class Switch(Instrument):
@@ -223,7 +261,13 @@ class Switch(Instrument):
     def str_state(self):
         return 'On' if self.state else 'Off'
 
-    def set(self, state):
+    def is_on(self):
+        return self.state
+
+    def turn_on(self):
+        pass
+
+    def turn_off(self):
         pass
 
 
@@ -237,11 +281,11 @@ class Heater(Switch):
     def state(self):
         return self.vehicle.is_heater_on
 
-    def set(self, state):
-        if state:
-            self.vehicle.start_heater()
-        else:
-            self.vehicle.stop_heater()
+    def turn_on(self):
+        self.vehicle.start_heater()
+
+    def turn_off(self):
+        self.vehicle.stop_heater()
 
 
 class EngineStart(Switch):
@@ -255,11 +299,11 @@ class EngineStart(Switch):
     def is_supported(self):
         return self.vehicle.is_engine_start_supported
 
-    def set(self, state):
-        if state:
-            self.vehicle.start_engine()
-        else:
-            self.vehicle.stop_engine()
+    def turn_on(self):
+        self.vehicle.start_engine()
+
+    def turn_off(self):
+        self.vehicle.stop_engine()
 
 
 class Position(Instrument):
@@ -386,7 +430,6 @@ class Dashboard:
             if instrument.setup(vehicle)
         ]
 
-    def configurate(self, scandinavian_miles=False):
+    def configurate(self, scandinavian_miles=False, **kwargs):
         for instrument in self.instruments:
-            instrument.configurate(dict(
-                CONF_SCANDINAVIAN_MILES=scandinavian_miles))
+            instrument.configurate(scandinavian_miles=scandinavian_miles)
