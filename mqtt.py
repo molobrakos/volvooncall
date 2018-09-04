@@ -274,7 +274,7 @@ class Entity:
 
     @threadsafe
     def publish(self, topic, payload, retain=False):
-        payload = dump_json(payload) if isinstance(payload, dict) else payload
+        payload = dump_json(payload) if isinstance(payload, dict) else str(payload)
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
         res, mid = self.client.publish(topic, payload, retain=retain)
         if res == MQTT_ERR_SUCCESS:
