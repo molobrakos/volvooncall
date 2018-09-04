@@ -16,6 +16,7 @@ from requests import Session, RequestException
 from requests.compat import urljoin
 
 from util import obj_parser, json_serialize, is_valid_path, find_path
+from util import owntracks_encrypt  # noqa: F401
 
 _ = version_info >= (3, 0) or exit('Python 3 required')
 
