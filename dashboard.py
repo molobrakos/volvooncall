@@ -382,7 +382,3 @@ class Dashboard():
             for instrument in create_instruments()
             if instrument.setup(vehicle, config)
         ]
-
-
-def create_dashboards(self, connection, config):
-    return (Dashboard(vehicle, config) for vehicle in connection.vehicles)
