@@ -307,7 +307,8 @@ class Vehicle(object):
 
     @property
     def is_journal_supported(self):
-        return self.attrs['journalLogSupported'] and self.attrs['journalLogEnabled']
+        return (self.attrs['journalLogSupported'] and
+                self.attrs['journalLogEnabled'])
 
     @property
     def is_engine_running(self):
