@@ -195,7 +195,7 @@ class Vehicle(object):
 
     @property
     def is_unlock_supported(self):
-        return self.attrs['unLockSupported']
+        return self.attrs['unlockSupported']
 
     @property
     def is_locked(self):
