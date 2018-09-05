@@ -220,7 +220,8 @@ def main():
         vehicle.honk_and_blink()
     elif args['dashboard']:
         from dashboard import Dashboard
-        dashboard = Dashboard(vehicle, credentials)
+        dashboard = Dashboard(vehicle)
+        dashboard.configurate(credentials)
         for instrument in dashboard.instruments:
             print(f'{instrument}: {instrument.str_state}')
     elif args['call']:
