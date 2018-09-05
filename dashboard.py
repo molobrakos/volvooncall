@@ -79,7 +79,10 @@ class Sensor(Instrument):
 
     @property
     def str_state(self):
-        return f'{self.state} {self.unit}'
+        if self.unit:
+            return f'{self.state} {self.unit}'
+        else:
+            return f'{self.state}'
 
     @property
     def state(self):
@@ -323,7 +326,6 @@ class Position(Instrument):
 
 
 #  FIXME: Maybe make this list configurable as external yaml
-#  FIXME: Expose drive journal (last trip?) as sensor
 def create_instruments():
     return [
         Position(),
