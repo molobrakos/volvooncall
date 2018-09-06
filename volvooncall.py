@@ -81,7 +81,7 @@ class Connection(object):
         """Perform a query to the online service."""
         return self._request(partial(self._session.post, json=data), ref, rel)
 
-    def update(self, reset=False):
+    def update(self, journal=True, reset=False):
         """Update status."""
         try:
             _LOGGER.info('Updating')
@@ -101,8 +101,9 @@ class Connection(object):
                     self.get('status', url))
                 self._state[url].update(
                     self.get('position', url))
-                self._state[url].update(
-                    self.get('trips', url))
+                if journal:
+                    self._state[url].update(
+                        self.get('trips', url))
                 _LOGGER.debug('State: %s', self._state)
             return True
         except (IOError, OSError) as error:
