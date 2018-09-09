@@ -3,7 +3,7 @@
 """Communicate with VOC server."""
 
 import logging
-from datetime import timedelta, date, datetime
+from datetime import timedelta
 from functools import partial
 from sys import argv, version_info
 from os import environ as env
@@ -11,14 +11,16 @@ from os.path import join, dirname, expanduser
 from itertools import product
 from json import dumps as to_json
 from collections import OrderedDict
-from base64 import b64encode
 
 from requests import Session, RequestException
 from requests.compat import urljoin
 
+from util import obj_parser, json_serialize, is_valid_path, find_path
+from util import owntracks_encrypt  # noqa: F401
+
 _ = version_info >= (3, 0) or exit('Python 3 required')
 
-__version__ = '0.5.0'
+__version__ = '0.6.3'
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,97 +36,7 @@ HEADERS = {'X-Device-Id': 'Device',
 TIMEOUT = timedelta(seconds=30)
 
 
-def _obj_parser(obj):
-    """Parse datetime."""
-    for key, val in obj.items():
-        try:
-            obj[key] = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S%z')
-        except (TypeError, ValueError):
-            pass
-    return obj
-
-
-def json_serialize(obj):
-    """JSON serializer for objects not serializable by default json code"""
-
-    if isinstance(obj, (datetime, date)):
-        return obj.isoformat()
-    raise TypeError("Type %s not serializable" % type(obj))
-
-
-def find_path(src, path):
-    """Simple navigation of a hierarchical dict structure using XPATH-like syntax.
-
-    >>> find_path(dict(a=1), 'a')
-    1
-
-    >>> find_path(dict(a=1), '')
-    {'a': 1}
-
-    >>> find_path(dict(a=None), 'a')
-
-
-    >>> find_path(dict(a=1), 'b')
-    Traceback (most recent call last):
-    ...
-    KeyError: 'b'
-
-    >>> find_path(dict(a=dict(b=1)), 'a.b')
-    1
-
-    >>> find_path(dict(a=dict(b=1)), 'a')
-    {'b': 1}
-
-    >>> find_path(dict(a=dict(b=1)), 'a.c')
-    Traceback (most recent call last):
-    ...
-    KeyError: 'c'
-
-    """
-    if not path:
-        return src
-    if isinstance(path, str):
-        path = path.split('.')
-    return find_path(src[path[0]], path[1:])
-
-
-def is_valid_path(src, path):
-    """
-    >>> is_valid_path(dict(a=1), 'a')
-    True
-
-    >>> is_valid_path(dict(a=1), '')
-    True
-
-    >>> is_valid_path(dict(a=1), None)
-    True
-
-    >>> is_valid_path(dict(a=1), 'b')
-    False
-    """
-    try:
-        find_path(src, path)
-        return True
-    except KeyError:
-        return False
-
-
-def owntracks_encrypt(msg, key):
-    try:
-        from libnacl import crypto_secretbox_KEYBYTES as keylen
-        from libnacl.secret import SecretBox as secret
-        key = key.encode('utf-8')
-        key = key[:keylen]
-        key = key.ljust(keylen, b'\0')
-        msg = msg.encode('utf-8')
-        ciphertext = secret(key).encrypt(msg)
-        ciphertext = b64encode(ciphertext)
-        ciphertext = ciphertext.decode('ascii')
-        return ciphertext
-    except ImportError:
-        exit('libnacl missing')
-    except OSError:
-        exit('libsodium missing')
+_LOGGER.debug('Loaded %s version: %s', __name__, __version__)
 
 
 class Connection(object):
@@ -134,7 +46,7 @@ class Connection(object):
     def __init__(self, username, password,
                  service_url=None, region=None, **_):
         """Initialize."""
-        _LOGGER.info('%s version: %s', __name__, __version__)
+        _LOGGER.info('Initializing %s version: %s', __name__, __version__)
 
         self._session = Session()
         self._service_url = SERVICE_URL.format(region='-'+region) \
@@ -153,7 +65,7 @@ class Connection(object):
             _LOGGER.debug('Request for %s', url)
             res = method(url, timeout=TIMEOUT.seconds)
             res.raise_for_status()
-            res = res.json(object_hook=_obj_parser)
+            res = res.json(object_hook=obj_parser)
             _LOGGER.debug('Received %s', res)
             return res
         except RequestException as error:
@@ -169,7 +81,7 @@ class Connection(object):
         """Perform a query to the online service."""
         return self._request(partial(self._session.post, json=data), ref, rel)
 
-    def update(self, reset=False):
+    def update(self, journal=True, reset=False):
         """Update status."""
         try:
             _LOGGER.info('Updating')
@@ -189,6 +101,9 @@ class Connection(object):
                     self.get('status', url))
                 self._state[url].update(
                     self.get('position', url))
+                if journal:
+                    self._state[url].update(
+                        self.get('trips', url))
                 _LOGGER.debug('State: %s', self._state)
             return True
         except (IOError, OSError) as error:
@@ -281,7 +196,7 @@ class Vehicle(object):
 
     @property
     def is_unlock_supported(self):
-        return self.attrs['unLockSupported']
+        return self.attrs['unlockSupported']
 
     @property
     def is_locked(self):
@@ -298,6 +213,11 @@ class Vehicle(object):
     @property
     def is_preclimatization_supported(self):
         return self.attrs['preclimatizationSupported']
+
+    @property
+    def is_journal_supported(self):
+        return (self.attrs['journalLogSupported'] and
+                self.attrs['journalLogEnabled'])
 
     @property
     def is_engine_running(self):
@@ -396,7 +316,7 @@ class Vehicle(object):
     @property
     def trips(self):
         """Return trips."""
-        return self.get('trips')
+        return self.attrs['trips']
 
     def honk_and_blink(self):
         """Honk and blink."""
@@ -453,6 +373,11 @@ class Vehicle(object):
             self.vehicle_type,
             self.model_year,
             self.vin)
+
+    @property
+    def dashboard(self):
+        from dashboard import Dashboard
+        return Dashboard(self)
 
     @property
     def json(self):

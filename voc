@@ -167,7 +167,7 @@ def main():
             def fix_timezone(dt):
                 return dt.astimezone(timezone.utc if args['--utc'] else None)
 
-            for trip in vehicle.trips['trips']:
+            for trip in vehicle.trips:
                 trip = trip['tripDetails'][0]
                 print('%.29s %25s %-10.10s %25s %10.10s %-10.10s' % (
                     fix_timezone(trip['startTime']),
@@ -220,7 +220,8 @@ def main():
         vehicle.honk_and_blink()
     elif args['dashboard']:
         from dashboard import Dashboard
-        dashboard = Dashboard(vehicle, credentials)
+        dashboard = Dashboard(vehicle)
+        dashboard.configurate(credentials)
         for instrument in dashboard.instruments:
             print(f'{instrument}: {instrument.str_state}')
     elif args['call']:

@@ -1,11 +1,9 @@
 #  Utilities for integration with Home Assistant (directly or via MQTT)
 
 import logging
-
+from util import camel2slug
 
 _LOGGER = logging.getLogger(__name__)
-
-CONF_SCANDINAVIAN_MILES = 'scandinavian_miles'
 
 
 class Instrument:
@@ -20,17 +18,21 @@ class Instrument:
     def __repr__(self):
         return self.full_name
 
-    def configurate(self, config):
+    def configurate(self, scandinavian_miles):
         pass
 
-    def setup(self, vehicle, config):
+    @property
+    def slug_attr(self):
+        return camel2slug(self.attr.replace('.', '_'))
+
+    def setup(self, vehicle):
         self.vehicle = vehicle
-        self.configurate(config)
 
         if self.is_supported:
             _LOGGER.debug('%s is supported', self)
         else:
-            _LOGGER.warning('%s is not supported', self)
+            _LOGGER.debug('%s (%s:%s) is not supported', self,
+                          type(self).__name__, self.attr)
 
         return self.is_supported
 
@@ -61,19 +63,26 @@ class Instrument:
             return getattr(self.vehicle, self.attr)
         return self.vehicle.get_attr(self.attr)
 
+    @property
+    def attributes(self):
+        return {}
+
 
 class Sensor(Instrument):
     def __init__(self, attr, name, icon, unit):
         super().__init__('sensor', attr, name, icon)
         self.unit = unit
 
-    def configurate(self, config):
-        if (CONF_SCANDINAVIAN_MILES in config and 'km' in self.unit):
+    def configurate(self, scandinavian_miles):
+        if self.unit and scandinavian_miles and 'km' in self.unit:
             self.unit = 'mil'
 
     @property
     def str_state(self):
-        return f'{self.state} {self.unit}'
+        if self.unit:
+            return f'{self.state} {self.unit}'
+        else:
+            return f'{self.state}'
 
     @property
     def state(self):
@@ -92,8 +101,8 @@ class FuelConsumption(Sensor):
                          icon='mdi:gas-station',
                          unit='L/100 km')
 
-    def configurate(self, config):
-        if CONF_SCANDINAVIAN_MILES in config:
+    def configurate(self, scandinavian_miles):
+        if scandinavian_miles:
             self.unit = 'L/mil'
 
     @property
@@ -123,6 +132,63 @@ class Odometer(Sensor):
             return int(round(val / 1000))  # m->km
 
 
+class JournalLastTrip(Sensor):
+
+    def __init__(self):
+        super().__init__(attr='trips',
+                         name='Last trip',
+                         unit=None,
+                         icon='mdi:book-open')
+
+    @property
+    def is_supported(self):
+        return self.vehicle.is_journal_supported
+
+    @property
+    def trip(self):
+        if self.vehicle.trips:
+            return self.vehicle.trips[0]['tripDetails'][0]
+
+    @property
+    def start_address(self):
+        return '{}, {}'.format(
+            self.trip['startPosition']['streetAddress'],
+            self.trip['startPosition']['city'])
+
+    @property
+    def end_address(self):
+        return '{}, {}'.format(
+            self.trip['endPosition']['streetAddress'],
+            self.trip['endPosition']['city'])
+
+    @property
+    def start_time(self):
+        return self.trip['startTime'].astimezone(None)
+
+    @property
+    def end_time(self):
+        return self.trip['endTime'].astimezone(None)
+
+    @property
+    def duration(self):
+        return self.end_time - self.start_time
+
+    @property
+    def state(self):
+        if self.trip:
+            return self.end_time
+
+    @property
+    def attributes(self):
+        if self.trip:
+            return dict(
+                start_address=self.start_address,
+                start_time=self.start_time,
+                end_address=self.end_address,
+                end_time=self.end_time,
+                duration=self.duration)
+
+
 class BinarySensor(Instrument):
     def __init__(self, attr, name, device_class):
         super().__init__('binary_sensor', attr, name)
@@ -150,16 +216,20 @@ class BinarySensor(Instrument):
         else:
             _LOGGER.error('Can not encode state %s:%s', val, type(val))
 
+    @property
+    def is_on(self):
+        return self.state
+
 
 class BatteryChargeStatus(BinarySensor):
     def __init__(self):
-        super().__init__('hvBattery.hvBatteryChargeStatus',
+        super().__init__('hvBattery.hvBatteryChargeStatusDerived',
                          'Battery charging',
                          'plug')
 
     @property
     def state(self):
-        return super(BinarySensor, self).state != 'plugRemoved'
+        return super(BinarySensor, self).state == 'CablePluggedInCar_Charging'
 
 
 class Lock(Instrument):
@@ -176,11 +246,15 @@ class Lock(Instrument):
     def state(self):
         return self.vehicle.is_locked
 
-    def command(self, command):
-        if self.state:
-            self.vehicle.lock()
-        else:
-            self.vehicle.unlock()
+    @property
+    def is_locked(self):
+        return self.state
+
+    def lock(self):
+        self.vehicle.lock()
+
+    def unlock(self):
+        self.vehicle.unlock()
 
 
 class Switch(Instrument):
@@ -194,7 +268,13 @@ class Switch(Instrument):
     def str_state(self):
         return 'On' if self.state else 'Off'
 
-    def set(self, state):
+    def is_on(self):
+        return self.state
+
+    def turn_on(self):
+        pass
+
+    def turn_off(self):
         pass
 
 
@@ -208,11 +288,11 @@ class Heater(Switch):
     def state(self):
         return self.vehicle.is_heater_on
 
-    def set(self, state):
-        if state:
-            self.vehicle.start_heater()
-        else:
-            self.vehicle.stop_heater()
+    def turn_on(self):
+        self.vehicle.start_heater()
+
+    def turn_off(self):
+        self.vehicle.stop_heater()
 
 
 class EngineStart(Switch):
@@ -226,16 +306,16 @@ class EngineStart(Switch):
     def is_supported(self):
         return self.vehicle.is_engine_start_supported
 
-    def set(self, state):
-        if state:
-            self.vehicle.start_engine()
-        else:
-            self.vehicle.stop_engine()
+    def turn_on(self):
+        self.vehicle.start_engine()
+
+    def turn_off(self):
+        self.vehicle.stop_engine()
 
 
 class Position(Instrument):
     def __init__(self):
-        super().__init__(component=None,
+        super().__init__(component='device_tracker',
                          attr='position',
                          name='Position')
 
@@ -246,7 +326,6 @@ class Position(Instrument):
 
 
 #  FIXME: Maybe make this list configurable as external yaml
-#  FIXME: Expose drive journal (last trip?) as sensor
 def create_instruments():
     return [
         Position(),
@@ -279,11 +358,12 @@ def create_instruments():
                icon='mdi:battery',
                unit='%'),
         Sensor(attr='hvBattery.timeToHVBatteryFullyCharged',
-               name='Battery Range',
+               name='Time to fully charged',
                icon='mdi:clock',
                unit='minutes'),
         BatteryChargeStatus(),
         EngineStart(),
+        JournalLastTrip(),
         BinarySensor(attr='engineRunning',
                      name='Engine',
                      device_class='power'),
@@ -347,14 +427,15 @@ def create_instruments():
     ]
 
 
-class Dashboard():
-    def __init__(self, vehicle, config):
+class Dashboard:
+
+    def __init__(self, vehicle):
         self.instruments = [
             instrument
             for instrument in create_instruments()
-            if instrument.setup(vehicle, config)
+            if instrument.setup(vehicle)
         ]
 
-
-def create_dashboards(self, connection, config):
-    return (Dashboard(vehicle, config) for vehicle in connection.vehicles)
+    def configurate(self, scandinavian_miles=False, **kwargs):
+        for instrument in self.instruments:
+            instrument.configurate(scandinavian_miles=scandinavian_miles)
