@@ -347,8 +347,7 @@ class Entity:
             return
         self.subscribe_to(self.command_topic)
         self.publish(self.discovery_topic,
-                     self.discovery_payload,
-                     retain=True)
+                     self.discovery_payload)
 
     def publish_availability(self, available):
         if self.is_position:
@@ -419,14 +418,10 @@ def run(voc, config):
                                             config)
                                      for instrument in dashboard.instruments]
 
-                for entity in entities[vehicle]:
-                    entity.publish_discovery()
-
-            for entity in entities.get(vehicle, []):
+            for entity in entities[vehicle]:
                 _LOGGER.debug('%s: %s',
                               entity.instrument.full_name, entity.state)
-
-            for entity in entities[vehicle]:
+                entity.publish_discovery()
                 entity.publish_availability(available)
                 if available:
                     entity.publish_state()
