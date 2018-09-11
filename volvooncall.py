@@ -81,7 +81,7 @@ class Connection(object):
         """Perform a query to the online service."""
         return self._request(partial(self._session.post, json=data), ref, rel)
 
-    def update(self, journal=True, reset=False):
+    def update(self, journal=False, reset=False):
         """Update status."""
         try:
             _LOGGER.info('Updating')
