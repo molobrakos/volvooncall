@@ -137,7 +137,7 @@ class JournalLastTrip(Sensor):
     def __init__(self):
         super().__init__(attr='trips',
                          name='Last trip',
-                         unit='date',
+                         unit='',
                          icon='mdi:book-open')
 
     @property
