@@ -222,7 +222,7 @@ def main():
     elif args['dashboard']:
         from dashboard import Dashboard
         dashboard = Dashboard(vehicle)
-        dashboard.configurate(credentials)
+        dashboard.configurate(**credentials)
         for instrument in dashboard.instruments:
             print(f'{instrument}: {instrument.str_state}')
     elif args['call']:
