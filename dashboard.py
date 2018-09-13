@@ -112,7 +112,7 @@ class FuelConsumption(Sensor):
             if 'mil' in self.unit:
                 return round(val / 10, 2)
             else:
-                return round(val, 1)
+                return round(val / 10, 1)
 
 
 class Odometer(Sensor):
