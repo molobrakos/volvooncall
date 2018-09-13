@@ -142,7 +142,8 @@ def main():
     except TypeError:
         exit('Could not read credentials and none supplied.')
 
-    connection.update() or exit('Could not connect to the server.')
+    connection.update(journal=args['trips'] or
+                      args['dashboard']) or exit('Could not connect to the server.')
 
     if args['list']:
         for vehicle in connection.vehicles:
@@ -221,7 +222,7 @@ def main():
     elif args['dashboard']:
         from dashboard import Dashboard
         dashboard = Dashboard(vehicle)
-        dashboard.configurate(credentials)
+        dashboard.configurate(**credentials)
         for instrument in dashboard.instruments:
             print(f'{instrument}: {instrument.str_state}')
     elif args['call']:
