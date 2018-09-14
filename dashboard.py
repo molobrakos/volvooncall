@@ -108,11 +108,9 @@ class FuelConsumption(Sensor):
     @property
     def state(self):
         val = super().state
+        decimals = 2 if 'mil' in self.unit else 1
         if val:
-            if 'mil' in self.unit:
-                return round(val / 10, 2)
-            else:
-                return round(val, 1)
+            return round(val / 10, decimals)
 
 
 class Odometer(Sensor):
