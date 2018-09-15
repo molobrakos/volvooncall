@@ -96,18 +96,22 @@ class Connection(object):
                     url = rel['vehicle'] + '/'
                     state = self.get('attributes', url)
                     self._state.update({url: state})
-            for url in self._state:
-                self._state[url].update(
-                    self.get('status', url))
-                self._state[url].update(
-                    self.get('position', url))
-                if journal:
-                    self._state[url].update(
-                        self.get('trips', url))
-                _LOGGER.debug('State: %s', self._state)
+            for vehicle in self.vehicles:
+                vehicle.update(journal=journal)
+            _LOGGER.debug('State: %s', self._state)
             return True
         except (IOError, OSError) as error:
             _LOGGER.warning('Could not query server: %s', error)
+
+    def update_vehicle(self, vehicle, journal=False):
+        url = vehicle._url
+        self._state[url].update(
+            self.get('status', url))
+        self._state[url].update(
+            self.get('position', url))
+        if journal:
+            self._state[url].update(
+                self.get('trips', url))
 
     @property
     def vehicles(self):
@@ -130,6 +134,9 @@ class Vehicle(object):
     def __init__(self, conn, url):
         self._connection = conn
         self._url = url
+
+    def update(self, journal=False):
+        self._connection.update_vehicle(self, journal)
 
     @property
     def attrs(self):
@@ -327,6 +334,7 @@ class Vehicle(object):
         """Lock."""
         if self.is_lock_supported:
             self.call('lock')
+            self.update()
         else:
             _LOGGER.warning('Lock not supported')
 
@@ -334,18 +342,21 @@ class Vehicle(object):
         """Unlock."""
         if self.is_unlock_supported:
             self.call('unlock')
+            self.update()
         else:
             _LOGGER.warning('Unlock not supported')
 
     def start_engine(self):
         if self.is_engine_start_supported:
             self.call('engine/start', runtime=5)
+            self.update()
         else:
             _LOGGER.warning('Engine start not supported.')
 
     def stop_engine(self):
         if self.is_engine_start_supported:
             self.call('engine/stop')
+            self.update()
         else:
             _LOGGER.warning('Engine stop not supported.')
 
