@@ -214,6 +214,10 @@ class Vehicle(object):
         return self.attrs['heater']
 
     @property
+    def engine(self):
+        return self.attrs['ERS']
+
+    @property
     def is_remote_heater_supported(self):
         return self.attrs['remoteHeaterSupported']
 
@@ -231,8 +235,16 @@ class Vehicle(object):
         return self.attrs['engineRunning']
 
     @property
+    def is_engine_remote_running(self):
+        """Return status of engine."""
+        return (self.is_engine_start_supported and
+                'status' in self.engine and
+                self.engine['status'] != 'off')
+
+    @property
     def is_engine_start_supported(self):
-        return self.attrs['engineStartSupported']
+        return (self.attrs['engineStartSupported'] and
+                'ERS' in self.attrs)
 
     def get(self, query):
         """Perform a query to the online service."""

@@ -94,7 +94,7 @@ def print_vehicle(vehicle, geolocate=False):
     except AttributeError:
         pass
 
-    print('    engine: %s' % on_or_off(vehicle.is_engine_running))
+    print('    engine: %s' % on_or_off(vehicle.is_engine_remote_running))
     print('    locked: %s' % yes_or_no(vehicle.is_locked))
     print('    heater: %s' % on_or_off(vehicle.is_heater_on))
 

@@ -296,13 +296,17 @@ class Heater(Switch):
 class EngineStart(Switch):
 
     def __init__(self):
-        super().__init__(attr='engineRunning',
+        super().__init__(attr='ERS',
                          name='Engine',
                          icon='mdi:engine')
 
     @property
     def is_supported(self):
         return self.vehicle.is_engine_start_supported
+
+    @property
+    def state(self):
+        return self.vehicle.is_engine_remote_running
 
     def turn_on(self):
         self.vehicle.start_engine()
@@ -363,7 +367,7 @@ def create_instruments():
         EngineStart(),
         JournalLastTrip(),
         BinarySensor(attr='engineRunning',
-                     name='Engine',
+                     name='Engine Running',
                      device_class='power'),
         BinarySensor(attr='doors.hoodOpen',
                      name='Hood',
