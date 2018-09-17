@@ -194,8 +194,7 @@ def main():
                  lat=vehicle.position['latitude'],
                  lon=vehicle.position['longitude'],
                  acc=1,
-                 tst=int(time()),
-                 _vehicle=OrderedDict(sorted(vehicle.properties.items()))),
+                 tst=int(time())),
             indent=4, default=json_serialize)
         key = credentials.get('owntracks_key')
         if key:
