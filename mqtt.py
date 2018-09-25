@@ -11,6 +11,7 @@ from threading import current_thread
 from time import sleep
 from threading import Event
 import string
+from threading import RLock
 import paho.mqtt.client as paho
 from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
@@ -19,7 +20,7 @@ from dashboard import (Dashboard,
                        Lock, Position,
                        Heater, Sensor,
                        BinarySensor, Switch)
-from util import camel2slug, threadsafe, whitelisted
+from util import camel2slug, whitelisted
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,6 +47,20 @@ CONF_OWNTRACKS_KEY = 'owntracks_key'
 
 TOPIC_WHITELIST = '_-' + string.ascii_letters + string.digits
 TOPIC_SUBSTITUTE = '_'
+
+
+LOCK = RLock()
+
+
+def threadsafe(function):
+    """ Synchronization decorator.
+    The paho MQTT library runs the on_subscribe etc callbacks
+    in its own thread and since we keep track of subscriptions etc
+    in Device.subscriptions, we need to synchronize threads."""
+    def wrapper(*args, **kw):
+        with LOCK:
+            return function(*args, **kw)
+    return wrapper
 
 
 def make_valid_hass_single_topic_level(s):
@@ -271,7 +286,6 @@ class Entity:
         else:
             _LOGGER.error('Huh?')
 
-    @threadsafe
     def publish(self, topic, payload, retain=False):
         payload = (dump_json(payload)
                    if isinstance(payload, dict)
@@ -279,20 +293,20 @@ class Entity:
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
         res, mid = self.client.publish(topic, payload, retain=retain)
         if res == MQTT_ERR_SUCCESS:
-            Entity.pending[mid] = (topic, payload)
+            with LOCK:
+                Entity.pending[mid] = (topic, payload)
         else:
             _LOGGER.warning('Failure to publish on %s', topic)
 
-    @threadsafe
     def subscribe_to(self, topic):
         _LOGGER.debug('Subscribing to %s', topic)
         res, mid = self.client.subscribe(topic)
         if res == MQTT_ERR_SUCCESS:
-            Entity.pending[mid] = (self, topic)
+            with LOCK:
+                Entity.pending[mid] = (self, topic)
         else:
             _LOGGER.warning('Failure to subscribe to %s', self.topic)
 
-    @threadsafe
     def on_mqtt_message(self, userdata, message):
         command = message.payload
         if self.is_lock:

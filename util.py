@@ -1,7 +1,6 @@
 from datetime import date, datetime
 from base64 import b64encode
 from string import ascii_letters as letters, digits
-from threading import RLock
 import re
 
 
@@ -121,17 +120,3 @@ def whitelisted(s,
     'abcdefgh'
    """
     return ''.join(c if c in whitelist else substitute for c in s)
-
-
-LOCK = RLock()
-
-
-def threadsafe(function):
-    """ Synchronization decorator.
-    The paho MQTT library runs the on_subscribe etc callbacks
-    in its own thread and since we keep track of subscriptions etc
-    in Device.subscriptions, we need to synchronize threads."""
-    def wrapper(*args, **kw):
-        with LOCK:
-            return function(*args, **kw)
-    return wrapper
