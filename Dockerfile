@@ -15,7 +15,7 @@ RUN set -x \
 
 COPY requirements.txt ./
 
-RUN pip --no-cache-dir --trusted-host pypi.org install -r requirements.txt coloredlogs libnacl \
+RUN pip --no-cache-dir --trusted-host pypi.org install --upgrade -r requirements.txt pip coloredlogs libnacl \
   && rm requirements.txt \
   ;
 
