@@ -5,6 +5,12 @@ No licence, public domain, no guarantees, feel free to use for anything. Please 
 
 Also contains an MQTT gateway for publishing information and bidirectional communication with e.g. Home Assistant.
 
+## system requirements
+
+ - At least python 3.6 or higher
+ 
+## how to use
+
 ```
 > voc --help
 Retrieve information from VOC
