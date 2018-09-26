@@ -228,11 +228,12 @@ class Vehicle(object):
 
     @property
     def is_engine_running(self):
-        return self.attrs['engineRunning']
+        return (self.attrs['engineRunning'] or
+                'ERS' in self.attrs and self.attrs['ERS']['status'] != 'off')
 
     @property
     def is_engine_start_supported(self):
-        return self.attrs['engineStartSupported']
+        return self.attrs['engineStartSupported'] and 'ERS' in self.attrs
 
     def get(self, query):
         """Perform a query to the online service."""
