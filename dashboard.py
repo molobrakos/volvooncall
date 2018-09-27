@@ -128,6 +128,7 @@ class Odometer(Sensor):
         val = super().state
         if val:
             return int(round(val / 1000))  # m->km
+        return 0
 
 
 class JournalLastTrip(Sensor):
@@ -200,6 +201,9 @@ class BinarySensor(Instrument):
             return 'Warning!' if self.state else 'OK'
         if self.device_class == 'plug':
             return 'Charging' if self.state else 'Plug removed'
+        if self.state is None:
+            _LOGGER.error('Can not encode state %s:%s', self.attr, self.state)
+            return '?'
         return 'On' if self.state else 'Off'
 
     @property
@@ -211,8 +215,7 @@ class BinarySensor(Instrument):
             return bool(val)
         elif isinstance(val, str):
             return val != 'Normal'
-        else:
-            _LOGGER.error('Can not encode state %s:%s', val, type(val))
+        return val
 
     @property
     def is_on(self):
@@ -296,7 +299,7 @@ class Heater(Switch):
 class EngineStart(Switch):
 
     def __init__(self):
-        super().__init__(attr='engineRunning',
+        super().__init__(attr='is_engine_running',
                          name='Engine',
                          icon='mdi:engine')
 
@@ -319,8 +322,9 @@ class Position(Instrument):
 
     @property
     def state(self):
-        return (super().state['latitude'],
-                super().state['longitude'])
+        state = super().state or {}
+        return (state.get('latitude', '?'),
+                state.get('longitude', '?'))
 
 
 #  FIXME: Maybe make this list configurable as external yaml
@@ -362,7 +366,7 @@ def create_instruments():
         BatteryChargeStatus(),
         EngineStart(),
         JournalLastTrip(),
-        BinarySensor(attr='engineRunning',
+        BinarySensor(attr='is_engine_running',
                      name='Engine',
                      device_class='power'),
         BinarySensor(attr='doors.hoodOpen',
