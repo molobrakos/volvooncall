@@ -155,85 +155,85 @@ class Vehicle(object):
 
     @property
     def position(self):
-        return self.attrs['position']
+        return self.attrs.get('position')
 
     @property
     def registration_number(self):
-        return self.attrs['registrationNumber']
+        return self.attrs.get('registrationNumber')
 
     @property
     def vin(self):
-        return self.attrs['vin']
+        return self.attrs.get('vin')
 
     @property
     def model_year(self):
-        return self.attrs['modelYear']
+        return self.attrs.get('modelYear')
 
     @property
     def vehicle_type(self):
-        return self.attrs['vehicleType']
+        return self.attrs.get('vehicleType')
 
     @property
     def odometer(self):
-        return self.attrs['odometer']
+        return self.attrs.get('odometer')
 
     @property
     def fuel_amount_level(self):
-        return self.attrs['fuelAmountLevel']
+        return self.attrs.get('fuelAmountLevel')
 
     @property
     def distance_to_empty(self):
-        return self.attrs['distanceToEmpty']
+        return self.attrs.get('distanceToEmpty')
 
     @property
     def is_honk_and_blink_supported(self):
-        return self.attrs['honkAndBlinkSupported']
+        return self.attrs.get('honkAndBlinkSupported')
 
     @property
     def doors(self):
-        return self.attrs['doors']
+        return self.attrs.get('doors')
 
     @property
     def windows(self):
-        return self.attrs['windows']
+        return self.attrs.get('windows')
 
     @property
     def is_lock_supported(self):
-        return self.attrs['lockSupported']
+        return self.attrs.get('lockSupported')
 
     @property
     def is_unlock_supported(self):
-        return self.attrs['unlockSupported']
+        return self.attrs.get('unlockSupported')
 
     @property
     def is_locked(self):
-        return self.attrs['carLocked']
+        return self.attrs.get('carLocked')
 
     @property
     def heater(self):
-        return self.attrs['heater']
+        return self.attrs.get('heater')
 
     @property
     def is_remote_heater_supported(self):
-        return self.attrs['remoteHeaterSupported']
+        return self.attrs.get('remoteHeaterSupported')
 
     @property
     def is_preclimatization_supported(self):
-        return self.attrs['preclimatizationSupported']
+        return self.attrs.get('preclimatizationSupported')
 
     @property
     def is_journal_supported(self):
-        return (self.attrs['journalLogSupported'] and
-                self.attrs['journalLogEnabled'])
+        return (self.attrs.get('journalLogSupported') and
+                self.attrs.get('journalLogEnabled'))
 
     @property
     def is_engine_running(self):
-        return (self.attrs['engineRunning'] or
-                'ERS' in self.attrs and self.attrs['ERS']['status'] != 'off')
+        return (self.attrs.get('engineRunning') or
+                self.attrs.get('ERS', {}).get('status') != 'off')
 
     @property
     def is_engine_start_supported(self):
-        return self.attrs['engineStartSupported'] and 'ERS' in self.attrs
+        return self.attrs.get('engineStartSupported') and self.attrs.get('ERS')
 
     def get(self, query):
         """Perform a query to the online service."""
@@ -290,9 +290,9 @@ class Vehicle(object):
         ...                   'timestamp': 'foo'})
         True
         """
-        return any(doors[door]
-                   for door in doors
-                   if 'Open' in door)
+        return doors and any(doors[door]
+                             for door in doors
+                             if 'Open' in door)
 
     @property
     def any_window_open(self):
@@ -324,7 +324,7 @@ class Vehicle(object):
     @property
     def trips(self):
         """Return trips."""
-        return self.attrs['trips']
+        return self.attrs.get('trips')
 
     def honk_and_blink(self):
         """Honk and blink."""
