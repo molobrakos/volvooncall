@@ -97,6 +97,7 @@ def test_ers():
     # should be off
     assert(all(not engine.state for engine in engines))
 
+
 def get_started_vehicle():
 
     def mocked_requests_get_ers(*args, **kwargs):
@@ -123,6 +124,7 @@ def get_started_vehicle():
 def test_ers_start():
     vehicle = get_started_vehicle()
     assert(vehicle.is_engine_running)
+
 
 def test_ers_start_dashboard():
     vehicle = get_started_vehicle()
