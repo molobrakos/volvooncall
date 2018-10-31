@@ -182,10 +182,10 @@ class JournalLastTrip(Sensor):
         if self.trip:
             return dict(
                 start_address=self.start_address,
-                start_time=self.start_time,
+                start_time=str(self.start_time),
                 end_address=self.end_address,
-                end_time=self.end_time,
-                duration=self.duration)
+                end_time=str(self.end_time),
+                duration=str(self.duration))
 
 
 class BinarySensor(Instrument):
