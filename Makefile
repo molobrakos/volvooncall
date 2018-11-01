@@ -30,7 +30,7 @@ pypi:
 	twine upload dist/*.tar.gz
 
 release:
-	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags ; make pypi
+	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags && make pypi
 
 IMAGE=molobrakos/voc
 
