@@ -251,8 +251,9 @@ class Entity:
                        state_topic=self.state_topic,
                        availability_topic=self.availability_topic,
                        payload_available=STATE_ONLINE,
-                       payload_not_available=STATE_OFFLINE,
-                       command_topic=self.command_topic)
+                       payload_not_available=STATE_OFFLINE)
+        if self.is_lock or self.is_switch:
+            payload.update(command_topic=self.command_topic)
         if self.is_sensor:
             return dict(payload,
                         icon=instrument.icon,
