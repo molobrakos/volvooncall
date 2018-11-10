@@ -144,7 +144,6 @@ def on_subscribe(client, userdata, mid, qos):
     client.message_callback_add(topic, entity.on_mqtt_message)
 
 
-@threadsafe
 def on_message(client, userdata, message):
     _LOGGER.warning('Got unhandled message on '
                     f'{message.topic}: {message.payload}')
@@ -287,6 +286,7 @@ class Entity:
         else:
             _LOGGER.error('Huh?')
 
+    @threadsafe
     def publish(self, topic, payload, retain=False):
         payload = (dump_json(payload)
                    if isinstance(payload, dict)
@@ -294,17 +294,16 @@ class Entity:
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
         res, mid = self.client.publish(topic, payload, retain=retain)
         if res == MQTT_ERR_SUCCESS:
-            with LOCK:
-                Entity.pending[mid] = (topic, payload)
+            Entity.pending[mid] = (topic, payload)
         else:
             _LOGGER.warning('Failure to publish on %s', topic)
 
+    @threadsafe
     def subscribe_to(self, topic):
         _LOGGER.debug('Subscribing to %s', topic)
         res, mid = self.client.subscribe(topic)
         if res == MQTT_ERR_SUCCESS:
-            with LOCK:
-                Entity.pending[mid] = (self, topic)
+            Entity.pending[mid] = (self, topic)
         else:
             _LOGGER.warning('Failure to subscribe to %s', self.topic)
 
