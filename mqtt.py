@@ -307,18 +307,22 @@ class Entity:
         else:
             _LOGGER.warning('Failure to subscribe to %s', self.topic)
 
-    def on_mqtt_message(self, userdata, message):
+    def on_mqtt_message(self, client, userdata, message):
         command = message.payload
         if self.is_lock:
             if command == STATE_LOCK:
                 self.instrument.lock()
-            else:
+            elif command == STATE_UNLOCK:
                 self.instrument.unlock()
+            else:
+                _LOGGER.info('Skipping unknown payload %s', command)
         elif self.is_switch:
             if command == STATE_ON:
                 self.instrument.turn_on()
-            else:
+            elif command == STATE_OFF:
                 self.instrument.turn_off()
+            else:
+                _LOGGER.info('Skipping unknown payload %s', command)
         else:
             _LOGGER.warning(f'No command to execute for {self}: {command}')
 
