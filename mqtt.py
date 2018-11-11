@@ -407,8 +407,16 @@ def run(voc, config):
 
     mqtt.event_connected = Event()
 
-    mqtt.connect(host=mqtt_config['host'],
-                 port=int(mqtt_config['port']))
+    host = mqtt_config['host']
+    port = mqtt_config['port']
+
+    try:
+        mqtt.connect(host, int(port))
+    except TimeoutError:
+        # FIXME: retry?
+        exit('Could not connect to MQTT server at %s:%s' % (
+            host, port))
+
     mqtt.loop_start()
 
     interval = int(config['interval'])
