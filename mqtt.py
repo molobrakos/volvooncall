@@ -424,33 +424,36 @@ def run(voc, config):
 
     entities = {}
 
-    while True:
+    try:
+        while True:
 
-        if not mqtt.event_connected.is_set():
-            _LOGGER.debug('Waiting for MQTT connection')
-            mqtt.event_connected.wait()
-            _LOGGER.debug('Connected')
+            if not mqtt.event_connected.is_set():
+                _LOGGER.debug('Waiting for MQTT connection')
+                mqtt.event_connected.wait()
+                _LOGGER.debug('Connected')
 
-        available = True
-        for vehicle in voc.vehicles:
-            if vehicle not in entities:
-                _LOGGER.debug('creating vehicle %s', vehicle)
+            available = True
+            for vehicle in voc.vehicles:
+                if vehicle not in entities:
+                    _LOGGER.debug('creating vehicle %s', vehicle)
 
-                dashboard = Dashboard(vehicle)
-                dashboard.configurate(**config)
+                    dashboard = Dashboard(vehicle)
+                    dashboard.configurate(**config)
 
-                entities[vehicle] = [Entity(mqtt,
-                                            instrument,
-                                            config)
-                                     for instrument in dashboard.instruments]
+                    entities[vehicle] = [Entity(mqtt,
+                                                instrument,
+                                                config)
+                                         for instrument in dashboard.instruments]
 
-            for entity in entities[vehicle]:
-                _LOGGER.debug('%s: %s',
-                              entity.instrument.full_name, entity.state)
-                entity.publish_discovery()
-                entity.publish_availability(available)
-                if available:
-                    entity.publish_state()
+                for entity in entities[vehicle]:
+                    _LOGGER.debug('%s: %s',
+                                  entity.instrument.full_name, entity.state)
+                    entity.publish_discovery()
+                    entity.publish_availability(available)
+                    if available:
+                        entity.publish_state()
 
-        sleep(interval)
-        available = voc.update()
+            sleep(interval)
+            available = voc.update()
+    except KeyboardInterrupt:
+        exit('Exiting')
