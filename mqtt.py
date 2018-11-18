@@ -443,7 +443,8 @@ def run(voc, config):
                     entities[vehicle] = [Entity(mqtt,
                                                 instrument,
                                                 config)
-                                         for instrument in dashboard.instruments]
+                                         for instrument
+                                         in dashboard.instruments]
 
                 for entity in entities[vehicle]:
                     _LOGGER.debug('%s: %s',
