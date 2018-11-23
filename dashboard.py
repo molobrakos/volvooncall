@@ -18,23 +18,30 @@ class Instrument:
     def __repr__(self):
         return self.full_name
 
-    def configurate(self, scandinavian_miles):
+    def configurate(self, **args):
         pass
 
     @property
     def slug_attr(self):
         return camel2slug(self.attr.replace('.', '_'))
 
-    def setup(self, vehicle):
+    def setup(self, vehicle, immutable, **config):
+        if immutable and self.is_mutable:
+            _LOGGER.info('Skipping %s because mutable', self.attr)
+            return False
+
         self.vehicle = vehicle
 
-        if self.is_supported:
-            _LOGGER.debug('%s is supported', self)
-        else:
+        if not self.is_supported:
             _LOGGER.debug('%s (%s:%s) is not supported', self,
                           type(self).__name__, self.attr)
+            return False
 
-        return self.is_supported
+        _LOGGER.debug('%s is supported', self)
+
+        self.configurate(**config)
+
+        return True
 
     @property
     def vehicle_name(self):
@@ -43,6 +50,10 @@ class Instrument:
     @property
     def full_name(self):
         return f'{self.vehicle_name} {self.name}'
+
+    @property
+    def is_mutable(self):
+        raise NotImplementedError('Must be set')
 
     @property
     def is_supported(self):
@@ -73,9 +84,13 @@ class Sensor(Instrument):
         super().__init__('sensor', attr, name, icon)
         self.unit = unit
 
-    def configurate(self, scandinavian_miles):
+    def configurate(self, scandinavian_miles, **config):
         if self.unit and scandinavian_miles and 'km' in self.unit:
             self.unit = 'mil'
+
+    @property
+    def is_mutable(self):
+        return False
 
     @property
     def str_state(self):
@@ -101,7 +116,7 @@ class FuelConsumption(Sensor):
                          icon='mdi:gas-station',
                          unit='L/100 km')
 
-    def configurate(self, scandinavian_miles):
+    def configurate(self, scandinavian_miles, **config):
         if scandinavian_miles:
             self.unit = 'L/mil'
 
@@ -194,6 +209,10 @@ class BinarySensor(Instrument):
         self.device_class = device_class
 
     @property
+    def is_mutable(self):
+        return False
+
+    @property
     def str_state(self):
         if self.device_class in ['door', 'window']:
             return 'Open' if self.state else 'Closed'
@@ -240,6 +259,10 @@ class Lock(Instrument):
                          name='Door lock')
 
     @property
+    def is_mutable(self):
+        return True
+
+    @property
     def str_state(self):
         return 'Locked' if self.state else 'Unlocked'
 
@@ -251,11 +274,11 @@ class Lock(Instrument):
     def is_locked(self):
         return self.state
 
-    def lock(self):
-        self.vehicle.lock()
+    async def lock(self):
+        await self.vehicle.lock()
 
-    def unlock(self):
-        self.vehicle.unlock()
+    async def unlock(self):
+        await self.vehicle.unlock()
 
 
 class Switch(Instrument):
@@ -264,6 +287,10 @@ class Switch(Instrument):
                          attr=attr,
                          name=name,
                          icon=icon)
+
+    @property
+    def is_mutable(self):
+        return True
 
     @property
     def str_state(self):
@@ -289,11 +316,11 @@ class Heater(Switch):
     def state(self):
         return self.vehicle.is_heater_on
 
-    def turn_on(self):
-        self.vehicle.start_heater()
+    async def turn_on(self):
+        await self.vehicle.start_heater()
 
-    def turn_off(self):
-        self.vehicle.stop_heater()
+    async def turn_off(self):
+        await self.vehicle.stop_heater()
 
 
 class EngineStart(Switch):
@@ -307,11 +334,11 @@ class EngineStart(Switch):
     def is_supported(self):
         return self.vehicle.is_engine_start_supported
 
-    def turn_on(self):
-        self.vehicle.start_engine()
+    async def turn_on(self):
+        await self.vehicle.start_engine()
 
-    def turn_off(self):
-        self.vehicle.stop_engine()
+    async def turn_off(self):
+        await self.vehicle.stop_engine()
 
 
 class Position(Instrument):
@@ -319,6 +346,10 @@ class Position(Instrument):
         super().__init__(component='device_tracker',
                          attr='position',
                          name='Position')
+
+    @property
+    def is_mutable(self):
+        return False
 
     @property
     def state(self):
@@ -431,13 +462,9 @@ def create_instruments():
 
 class Dashboard:
 
-    def __init__(self, vehicle):
+    def __init__(self, vehicle, **config):
         self.instruments = [
             instrument
             for instrument in create_instruments()
-            if instrument.setup(vehicle)
+            if instrument.setup(vehicle, **config)
         ]
-
-    def configurate(self, scandinavian_miles=False, **kwargs):
-        for instrument in self.instruments:
-            instrument.configurate(scandinavian_miles=scandinavian_miles)

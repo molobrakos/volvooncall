@@ -11,14 +11,17 @@ from os.path import join, dirname, expanduser
 from itertools import product
 from json import dumps as to_json
 from collections import OrderedDict
+import asyncio
+import aiohttp
+import contextlib
 
 from requests import Session, RequestException
 from requests.compat import urljoin
 
-from util import obj_parser, json_serialize, is_valid_path, find_path
+from util import obj_parser, json_serialize, is_valid_path, find_path, json_loads
 from util import owntracks_encrypt  # noqa: F401
 
-_ = version_info >= (3, 0) or exit('Python 3 required')
+_ = version_info >= (3, 7) or exit('Python 3.7 required')
 
 __version__ = '0.6.13'
 
@@ -39,7 +42,7 @@ TIMEOUT = timedelta(seconds=30)
 _LOGGER.debug('Loaded %s version: %s', __name__, __version__)
 
 
-class Connection(object):
+class Connection(contextlib.AbstractAsyncContextManager):
 
     """Connection to the VOC server."""
 
@@ -48,70 +51,74 @@ class Connection(object):
         """Initialize."""
         _LOGGER.info('Initializing %s version: %s', __name__, __version__)
 
-        self._session = Session()
+        self._session = aiohttp.ClientSession(
+            headers=HEADERS,
+            raise_for_status=True,
+            auth=aiohttp.BasicAuth(username,
+                                   password),
+            timeout=aiohttp.ClientTimeout(total=TIMEOUT.seconds))
         self._service_url = SERVICE_URL.format(region='-'+region) \
             if region else service_url or DEFAULT_SERVICE_URL
-        self._session.headers.update(HEADERS)
-        self._session.auth = (username,
-                              password)
         self._state = {}
         _LOGGER.debug('Using service <%s>', self._service_url)
         _LOGGER.debug('User: <%s>', username)
 
-    def _request(self, method, ref, rel=None):
+    async def __aexit__(self, exc_type, exc, tb):
+        await self._session.close()
+
+    async def _request(self, method, ref, rel=None):
         """Perform a query to the online service."""
         try:
             url = urljoin(rel or self._service_url, ref)
             _LOGGER.debug('Request for %s', url)
-            res = method(url, timeout=TIMEOUT.seconds)
-            res.raise_for_status()
-            res = res.json(object_hook=obj_parser)
-            _LOGGER.debug('Received %s', res)
-            return res
+            async with method(url) as response:
+                res = await response.json(loads=json_loads)
+                _LOGGER.debug('Received %s', res)
+                return res
         except RequestException as error:
             _LOGGER.warning('Failure when communcating with the server: %s',
                             error)
             raise
 
-    def get(self, ref, rel=None):
+    async def get(self, ref, rel=None):
         """Perform a query to the online service."""
-        return self._request(self._session.get, ref, rel)
+        return await self._request(self._session.get, ref, rel)
 
-    def post(self, ref, rel=None, **data):
+    async def post(self, ref, rel=None, **data):
         """Perform a query to the online service."""
-        return self._request(partial(self._session.post, json=data), ref, rel)
+        return await self._request(partial(self._session.post, json=data), ref, rel)
 
-    def update(self, journal=False, reset=False):
+    async def update(self, journal=False, reset=False):
         """Update status."""
         try:
             _LOGGER.info('Updating')
             if not self._state or reset:
                 _LOGGER.info('Querying vehicles')
-                user = self.get('customeraccounts')
+                user = await self.get('customeraccounts')
                 _LOGGER.debug('Account for <%s> received',
                               user['username'])
                 self._state = {}
                 for vehicle in user['accountVehicleRelations']:
-                    rel = self.get(vehicle)
+                    rel = await self.get(vehicle)
                     url = rel['vehicle'] + '/'
-                    state = self.get('attributes', url)
+                    state = await self.get('attributes', url)
                     self._state.update({url: state})
             for vehicle in self.vehicles:
-                vehicle.update(journal=journal)
+                await vehicle.update(journal=journal)
             _LOGGER.debug('State: %s', self._state)
             return True
         except (IOError, OSError) as error:
             _LOGGER.warning('Could not query server: %s', error)
 
-    def update_vehicle(self, vehicle, journal=False):
+    async def update_vehicle(self, vehicle, journal=False):
         url = vehicle._url
         self._state[url].update(
-            self.get('status', url))
+            await self.get('status', url))
         self._state[url].update(
-            self.get('position', url))
+            await self.get('position', url))
         if journal:
             self._state[url].update(
-                self.get('trips', url))
+                await self.get('trips', url))
 
     @property
     def vehicles(self):
@@ -135,8 +142,8 @@ class Vehicle(object):
         self._connection = conn
         self._url = url
 
-    def update(self, journal=False):
-        self._connection.update_vehicle(self, journal)
+    async def update(self, journal=False):
+        await self._connection.update_vehicle(self, journal)
 
     @property
     def attrs(self):
@@ -238,18 +245,18 @@ class Vehicle(object):
         return (self.attrs.get('engineStartSupported') and
                 self.attrs.get('ERS'))
 
-    def get(self, query):
+    async def get(self, query):
         """Perform a query to the online service."""
-        return self._connection.get(query, self._url)
+        return await self._connection.get(query, self._url)
 
-    def post(self, query, **data):
+    async def post(self, query, **data):
         """Perform a query to the online service."""
-        return self._connection.post(query, self._url, **data)
+        return await self._connection.post(query, self._url, **data)
 
-    def call(self, method, **data):
+    async def call(self, method, **data):
         """Make remote method call."""
         try:
-            res = self.post(method, **data)
+            res = await self.post(method, **data)
 
             if 'service' and 'status' not in res:
                 _LOGGER.warning('Failed to execute: %s', res['status'])
@@ -262,7 +269,7 @@ class Vehicle(object):
             # if Queued -> wait?
 
             service_url = res['service']
-            res = self.get(service_url)
+            res = await self.get(service_url)
 
             if 'service' and 'status' not in res:
                 _LOGGER.warning('Message not delivered: %s', res['status'])
@@ -334,51 +341,55 @@ class Vehicle(object):
         if self.is_honk_and_blink_supported:
             self.call('honkAndBlink')
 
-    def lock(self):
+    async def lock(self):
         """Lock."""
         if self.is_lock_supported:
-            self.call('lock')
-            self.update()
+            await self.call('lock')
+            await self.update()
         else:
             _LOGGER.warning('Lock not supported')
 
-    def unlock(self):
+    async def unlock(self):
         """Unlock."""
         if self.is_unlock_supported:
-            self.call('unlock')
-            self.update()
+            await self.call('unlock')
+            await self.update()
         else:
             _LOGGER.warning('Unlock not supported')
 
-    def start_engine(self):
+    async def start_engine(self):
         if self.is_engine_start_supported:
-            self.call('engine/start', runtime=5)
-            self.update()
+            await self.call('engine/start', runtime=5)
+            await self.update()
         else:
             _LOGGER.warning('Engine start not supported.')
 
-    def stop_engine(self):
+    async def stop_engine(self):
         if self.is_engine_start_supported:
-            self.call('engine/stop')
-            self.update()
+            await self.call('engine/stop')
+            await self.update()
         else:
             _LOGGER.warning('Engine stop not supported.')
 
-    def start_heater(self):
+    async def start_heater(self):
         """Turn on/off heater."""
         if self.is_remote_heater_supported:
-            self.call('heater/start')
+            await self.call('heater/start')
+            await self.update()
         elif self.is_preclimatization_supported:
-            self.call('preclimatization/start')
+            await self.call('preclimatization/start')
+            await self.update()
         else:
             _LOGGER.warning('No heater or preclimatization support.')
 
-    def stop_heater(self):
+    async def stop_heater(self):
         """Turn on/off heater."""
         if self.is_remote_heater_supported:
-            self.call('heater/stop')
+            await self.call('heater/stop')
+            await self.update()
         elif self.is_preclimatization_supported:
-            self.call('preclimatization/stop')
+            await self.call('preclimatization/stop')
+            await self.update()
         else:
             _LOGGER.warning('No heater or preclimatization support.')
 
@@ -423,7 +434,7 @@ def read_credentials():
     return {}
 
 
-def main():
+async def main():
     """Main method."""
     if '-v' in argv:
         logging.basicConfig(level=logging.INFO)
@@ -432,12 +443,11 @@ def main():
     else:
         logging.basicConfig(level=logging.ERROR)
 
-    connection = Connection(**read_credentials())
-
-    if connection.update():
-        for vehicle in connection.vehicles:
-            print(vehicle)
+    async with Connection(**read_credentials()) as connection:
+        if await connection.update():
+            for vehicle in connection.vehicles:
+                print(vehicle)
 
 
 if __name__ == '__main__':
-    main()
+    asyncio.run(main())

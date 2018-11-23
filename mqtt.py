@@ -7,13 +7,8 @@ from json import dumps as dump_json
 from os.path import join, expanduser
 from os import environ as env
 from requests import certs
-from threading import current_thread
 from time import sleep
-from threading import Event
 import string
-from threading import RLock
-import paho.mqtt.client as paho
-from paho.mqtt.client import MQTT_ERR_SUCCESS
 from volvooncall import owntracks_encrypt
 from platform import node as hostname
 from dashboard import (Dashboard,
@@ -21,6 +16,8 @@ from dashboard import (Dashboard,
                        Heater, Sensor,
                        BinarySensor, Switch)
 from util import camel2slug, whitelisted
+from hbmqtt.client import MQTTClient, ConnectException, ClientException
+import asyncio
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -47,20 +44,6 @@ CONF_OWNTRACKS_KEY = 'owntracks_key'
 
 TOPIC_WHITELIST = '_-' + string.ascii_letters + string.digits
 TOPIC_SUBSTITUTE = '_'
-
-
-LOCK = RLock()
-
-
-def threadsafe(function):
-    """ Synchronization decorator.
-    The paho MQTT library runs the on_subscribe etc callbacks
-    in its own thread and since we keep track of subscriptions etc
-    in Device.subscriptions, we need to synchronize threads."""
-    def wrapper(*args, **kw):
-        with LOCK:
-            return function(*args, **kw)
-    return wrapper
 
 
 def make_valid_hass_single_topic_level(s):
@@ -102,62 +85,22 @@ def read_mqtt_config():
                     password=d['pw'])
 
 
-@threadsafe
-def on_connect(client, userdata, flags, rc):
-    current_thread().setName('MQTTThread')
-    if rc != MQTT_ERR_SUCCESS:
-        _LOGGER.error('Failure to connect: %d', rc)
-        return
-    _LOGGER.info('Connected')
-
-    if flags.get('session present', False):
-        _LOGGER.debug('Session present')
-    else:
-        _LOGGER.debug('Session not present, resubscribe to topics')
-        for entity in Entity.entities:
-            entity.publish_discovery()
-
-    # Go on
-    client.event_connected.set()
-
-
-@threadsafe
-def on_publish(client, userdata, mid):
-    _LOGGER.debug('Successfully published on %s: %s',
-                  *Entity.pending.pop(mid))
-
-
-def on_disconnect(client, userdata, rc):
-    if rc == MQTT_ERR_SUCCESS:
-        # we called disconnect ourselves
-        _LOGGER.info('Disconnect successful')
-    else:
-        _LOGGER.warning('Disconnected, automatically reconnecting')
-        client.event_connected.clear()
-
-
-@threadsafe
-def on_subscribe(client, userdata, mid, qos):
-    entity, topic = Entity.pending.pop(mid)
-    _LOGGER.debug('Successfully subscribed to %s',
-                  topic)
-    client.message_callback_add(topic, entity.on_mqtt_message)
-
-
-def on_message(client, userdata, message):
-    _LOGGER.warning('Got unhandled message on '
-                    f'{message.topic}: {message.payload}')
-
-
 class Entity:
 
-    pending = {}
-    entities = []
+    subscriptions = {}
 
     def __init__(self, client, instrument, config):
         self.client = client
         self.instrument = instrument
         self.config = config
+
+    @classmethod
+    def route_message(cls, topic, payload):
+        entity = Entity.subscriptions.get(topic)
+        if entity:
+            entity.receive_command(payload)
+        else:
+            _LOGGER.warning('No subscriber to message on topic %s', topic)
 
     @property
     def vehicle(self):
@@ -174,6 +117,8 @@ class Entity:
     @property
     def state(self):
         state = self.instrument.state
+        if state is None:
+            return None
         if self.is_lock:
             return (STATE_UNLOCK, STATE_LOCK)[state]
         elif self.is_switch:
@@ -286,41 +231,39 @@ class Entity:
         else:
             _LOGGER.error('Huh?')
 
-    @threadsafe
-    def publish(self, topic, payload, retain=False):
+    async def publish(self, topic, payload, retain=False):
         payload = (dump_json(payload)
                    if isinstance(payload, dict)
                    else str(payload))
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
-        res, mid = self.client.publish(topic, payload, retain=retain)
-        if res == MQTT_ERR_SUCCESS:
-            Entity.pending[mid] = (topic, payload)
-        else:
-            _LOGGER.warning('Failure to publish on %s', topic)
+        await self.client.publish(topic, payload.encode('utf-8'), retain=retain)
+        _LOGGER.debug(f'Published on {topic}: {payload}')
 
-    @threadsafe
-    def subscribe_to(self, topic):
+    async def subscribe_to(self, topic):
         _LOGGER.debug('Subscribing to %s', topic)
-        res, mid = self.client.subscribe(topic)
-        if res == MQTT_ERR_SUCCESS:
-            Entity.pending[mid] = (self, topic)
-        else:
-            _LOGGER.warning('Failure to subscribe to %s', self.topic)
+        from hbmqtt.mqtt.constants import QOS_1
+        await self.client.subscribe([
+            (topic, QOS_1)
+        ])
+        _LOGGER.debug('Subscribed to %s', topic)
+        Entity.subscriptions[topic] = self
 
-    def on_mqtt_message(self, client, userdata, message):
-        command = message.payload
+    def receive_command(self, command):
+
+        run = asyncio.create_task
+
         if self.is_lock:
             if command == STATE_LOCK:
-                self.instrument.lock()
+                run(self.instrument.lock())
             elif command == STATE_UNLOCK:
-                self.instrument.unlock()
+                run(self.instrument.unlock())
             else:
                 _LOGGER.info('Skipping unknown payload %s', command)
         elif self.is_switch:
             if command == STATE_ON:
-                self.instrument.turn_on()
+                run(self.instrument.turn_on())
             elif command == STATE_OFF:
-                self.instrument.turn_off()
+                run(self.instrument.turn_off())
             else:
                 _LOGGER.info('Skipping unknown payload %s', command)
         else:
@@ -360,30 +303,32 @@ class Entity:
     def is_heater(self):
         return isinstance(self.instrument, Heater)
 
-    def publish_discovery(self):
+    async def publish_discovery(self):
         if self.is_position:
             return
-        self.subscribe_to(self.command_topic)
-        self.publish(self.discovery_topic,
-                     self.discovery_payload)
+        await self.subscribe_to(self.command_topic)
+        await self.publish(self.discovery_topic,
+                           self.discovery_payload)
 
-    def publish_availability(self, available):
+    async def publish_availability(self, available):
         if self.is_position:
             return
-        self.publish(self.availability_topic,
-                     STATE_ONLINE if available and
-                     self.state is not None else
-                     STATE_OFFLINE)
+        await self.publish(self.availability_topic,
+                           STATE_ONLINE if available and
+                           self.state is not None else
+                           STATE_OFFLINE)
 
-    def publish_state(self):
+    async def publish_state(self):
         if self.state is not None:
             _LOGGER.debug(f'State for {self.attr}: {self.state}')
-            self.publish(self.state_topic, self.state)
+            await self.publish(self.state_topic, self.state)
         else:
             _LOGGER.warning(f'No state available for {self}')
 
 
-def run(voc, config):
+async def run(voc, config):
+
+    logging.getLogger('hbmqtt.client.plugins.packet_logger_plugin').setLevel(logging.WARNING)
 
     # FIXME: Allow MQTT credentials in voc.conf
 
@@ -392,69 +337,65 @@ def run(voc, config):
         time=time())
 
     mqtt_config = read_mqtt_config()
+    mqtt = MQTTClient(client_id=client_id)
+    url = mqtt_config.get('url')
 
-    mqtt = paho.Client(client_id=client_id,
-                       clean_session=False)
-    mqtt.username_pw_set(username=mqtt_config['username'],
-                         password=mqtt_config['password'])
-    mqtt.tls_set(certs.where())
-
-    mqtt.on_connect = on_connect
-    mqtt.on_disconnect = on_disconnect
-    mqtt.on_publish = on_publish
-    mqtt.on_message = on_message
-    mqtt.on_subscribe = on_subscribe
-
-    mqtt.event_connected = Event()
-
-    host = mqtt_config['host']
-    port = mqtt_config['port']
-
-    try:
-        mqtt.connect(host, int(port))
-    except TimeoutError:
-        # FIXME: retry?
-        exit('Could not connect to MQTT server at %s:%s' % (
-            host, port))
-
-    mqtt.loop_start()
-
-    interval = int(config['interval'])
-    _LOGGER.info(f'Polling every {interval} seconds')
+    if not url:
+        try:
+            username = mqtt_config['username']
+            password = mqtt_config['password']
+            host = mqtt_config['host']
+            port = mqtt_config['port']
+            url = f'mqtts://{username}:{password}@{host}:{port}'
+        except Exception as e:
+            exit(e)
 
     entities = {}
 
-    try:
+    async def mqtt_task():
+        try:
+            await mqtt.connect(url, cleansession=False)
+            _LOGGER.info('Connected to MQTT server')
+        except ConnectException as e:
+            exit('Could not connect to MQTT server: %s' % e)
         while True:
+            _LOGGER.debug('Waiting for messages')
+            try:
+                message = await mqtt.deliver_message()
+                packet = message.publish_packet
+                topic = packet.variable_header.topic_name
+                payload = packet.payload.data.decode('ascii')
+                _LOGGER.debug('got message on %s: %s', topic, payload)
+                Entity.route_message(topic, payload)
+            except ClientException as e:
+                _LOGGER.error('MQTT Client exception: %s', e)
 
-            if not mqtt.event_connected.is_set():
-                _LOGGER.debug('Waiting for MQTT connection')
-                mqtt.event_connected.wait()
-                _LOGGER.debug('Connected')
+    asyncio.create_task(mqtt_task())
 
-            available = True
-            for vehicle in voc.vehicles:
-                if vehicle not in entities:
-                    _LOGGER.debug('creating vehicle %s', vehicle)
+    interval = int(config['interval'])
+    _LOGGER.info(f'Polling VOC every {interval} seconds')
+    while True:
+        available = await voc.update(journal=True)
+        wait_list = []
+        for vehicle in voc.vehicles:
+            if vehicle not in entities:
+                _LOGGER.debug('creating vehicle %s', vehicle)
 
-                    dashboard = Dashboard(vehicle)
-                    dashboard.configurate(**config)
+                dashboard = Dashboard(vehicle, **config)
 
-                    entities[vehicle] = [Entity(mqtt,
-                                                instrument,
-                                                config)
-                                         for instrument
-                                         in dashboard.instruments]
+                entities[vehicle] = [Entity(mqtt,
+                                            instrument,
+                                            config)
+                                     for instrument
+                                     in dashboard.instruments]
+            for entity in entities[vehicle]:
+                _LOGGER.debug('%s: %s',
+                              entity.instrument.full_name, entity.state)
+                wait_list.append(entity.publish_discovery())
+                wait_list.append(entity.publish_availability(available))
+            if available:
+                wait_list.append(entity.publish_state())
 
-                for entity in entities[vehicle]:
-                    _LOGGER.debug('%s: %s',
-                                  entity.instrument.full_name, entity.state)
-                    entity.publish_discovery()
-                    entity.publish_availability(available)
-                    if available:
-                        entity.publish_state()
-
-            sleep(interval)
-            available = voc.update()
-    except KeyboardInterrupt:
-        exit('Exiting')
+        await asyncio.gather(*wait_list)
+        _LOGGER.debug('Waiting for new VOC update in %d seconds', interval)
+        await asyncio.sleep(interval)

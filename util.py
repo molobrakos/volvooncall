@@ -1,6 +1,7 @@
 from datetime import date, datetime
 from base64 import b64encode
 from string import ascii_letters as letters, digits
+import json
 import re
 
 
@@ -20,6 +21,10 @@ def json_serialize(obj):
     if isinstance(obj, (datetime, date)):
         return obj.isoformat()
     raise TypeError("Type %s not serializable" % type(obj))
+
+
+def json_loads(s):
+    return json.loads(s, object_hook=obj_parser)
 
 
 def find_path(src, path):
