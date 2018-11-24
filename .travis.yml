@@ -1,8 +1,9 @@
 language: python
 python:
-  - "3.6"
+  - "3.7"
+dist: xenial
 env:
-  - TOXENV=py36
+  - TOXENV=py37
   - TOXENV=lint
 install: pip install tox
 script: tox
