@@ -49,7 +49,7 @@ class Instrument:
 
     @property
     def full_name(self):
-        return f'{self.vehicle_name} {self.name}'
+        return '%s %s' % (self.vehicle_name, self.name)
 
     @property
     def is_mutable(self):
@@ -95,9 +95,9 @@ class Sensor(Instrument):
     @property
     def str_state(self):
         if self.unit:
-            return f'{self.state} {self.unit}'
+            return '%s %s' % (self.state, self.unit)
         else:
-            return f'{self.state}'
+            return '%s' % self.state
 
     @property
     def state(self):

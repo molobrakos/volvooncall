@@ -233,10 +233,10 @@ class Entity:
         payload = (dump_json(payload)
                    if isinstance(payload, dict)
                    else str(payload))
-        _LOGGER.debug(f'Publishing on {topic}: {payload}')
+        _LOGGER.debug('Publishing on %s: %s', topic, payload)
         await self.client.publish(
             topic, payload.encode('utf-8'), retain=retain)
-        _LOGGER.debug(f'Published on {topic}: {payload}')
+        _LOGGER.debug('Published on %s: %s', topic, payload)
 
     async def subscribe_to(self, topic):
         _LOGGER.debug('Subscribing to %s', topic)
@@ -267,7 +267,7 @@ class Entity:
                 _LOGGER.info('Skipping unknown payload %s', command)
         else:
             _LOGGER.warning(
-                f'No command to execute for {self}: {command}')
+                'No command to execute for %s: %s', self, command)
 
     @property
     def is_sensor(self):
@@ -320,10 +320,10 @@ class Entity:
 
     async def publish_state(self):
         if self.state is not None:
-            _LOGGER.debug(f'State for {self.attr}: {self.state}')
+            _LOGGER.debug('State for %s: %s', self.attr, self.state)
             await self.publish(self.state_topic, self.state)
         else:
-            _LOGGER.warning(f'No state available for {self}')
+            _LOGGER.warning('No state available for %s', self)
 
 
 async def run(voc, config):
@@ -348,7 +348,8 @@ async def run(voc, config):
             password = mqtt_config['password']
             host = mqtt_config['host']
             port = mqtt_config['port']
-            url = f'mqtts://{username}:{password}@{host}:{port}'
+            url = 'mqtts://{username}:{password}@{host}:{port}'.format(
+                username=username, password=password, host=host, port=port)
         except Exception as e:
             exit(e)
 
@@ -375,7 +376,7 @@ async def run(voc, config):
     asyncio.create_task(mqtt_task())
 
     interval = int(config['interval'])
-    _LOGGER.info(f'Polling VOC every {interval} seconds')
+    _LOGGER.info('Polling VOC every %d seconds', interval)
     while True:
         available = await voc.update(journal=True)
         wait_list = []

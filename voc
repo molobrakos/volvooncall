@@ -219,7 +219,7 @@ async def main(args):
             from dashboard import Dashboard
             dashboard = Dashboard(vehicle, **credentials)
             for instrument in dashboard.instruments:
-                print(f'{instrument}: {instrument.str_state}')
+                print('%-30s: %s' % (instrument, instrument.str_state))
         elif args['call']:
             vehicle.call(args['<method>'])
 
