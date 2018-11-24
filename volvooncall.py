@@ -109,7 +109,7 @@ class Connection(
                 await vehicle.update(journal=journal)
             _LOGGER.debug('State: %s', self._state)
             return True
-        except (IOError, OSError) as error:
+        except (IOError, OSError, LookupError) as error:
             _LOGGER.warning('Could not query server: %s', error)
 
     async def update_vehicle(self, vehicle, journal=False):
