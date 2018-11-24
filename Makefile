@@ -1,9 +1,9 @@
 default: check
 
-lint:
+lint: requirements.txt setup.py
 	tox -e lint
 
-test:
+test: requirements.txt setup.py
 	tox
 
 check: lint test
