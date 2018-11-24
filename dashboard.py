@@ -25,7 +25,7 @@ class Instrument:
     def slug_attr(self):
         return camel2slug(self.attr.replace('.', '_'))
 
-    def setup(self, vehicle, immutable, **config):
+    def setup(self, vehicle, immutable=False, **config):
         if immutable and self.is_mutable:
             _LOGGER.info('Skipping %s because mutable', self.attr)
             return False
@@ -84,7 +84,7 @@ class Sensor(Instrument):
         super().__init__('sensor', attr, name, icon)
         self.unit = unit
 
-    def configurate(self, scandinavian_miles, **config):
+    def configurate(self, scandinavian_miles=False, **config):
         if self.unit and scandinavian_miles and 'km' in self.unit:
             self.unit = 'mil'
 
@@ -116,7 +116,7 @@ class FuelConsumption(Sensor):
                          icon='mdi:gas-station',
                          unit='L/100 km')
 
-    def configurate(self, scandinavian_miles, **config):
+    def configurate(self, scandinavian_miles=False, **config):
         if scandinavian_miles:
             self.unit = 'L/mil'
 
