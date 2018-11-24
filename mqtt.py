@@ -6,8 +6,6 @@ from time import time
 from json import dumps as dump_json
 from os.path import join, expanduser
 from os import environ as env
-from requests import certs
-from time import sleep
 import string
 from volvooncall import owntracks_encrypt
 from platform import node as hostname
@@ -236,7 +234,8 @@ class Entity:
                    if isinstance(payload, dict)
                    else str(payload))
         _LOGGER.debug(f'Publishing on {topic}: {payload}')
-        await self.client.publish(topic, payload.encode('utf-8'), retain=retain)
+        await self.client.publish(
+            topic, payload.encode('utf-8'), retain=retain)
         _LOGGER.debug(f'Published on {topic}: {payload}')
 
     async def subscribe_to(self, topic):
@@ -267,7 +266,8 @@ class Entity:
             else:
                 _LOGGER.info('Skipping unknown payload %s', command)
         else:
-            _LOGGER.warning(f'No command to execute for {self}: {command}')
+            _LOGGER.warning(
+                f'No command to execute for {self}: {command}')
 
     @property
     def is_sensor(self):
@@ -328,7 +328,9 @@ class Entity:
 
 async def run(voc, config):
 
-    logging.getLogger('hbmqtt.client.plugins.packet_logger_plugin').setLevel(logging.WARNING)
+    logging.getLogger(
+        'hbmqtt.client.plugins.packet_logger_plugin').setLevel(
+            logging.WARNING)
 
     # FIXME: Allow MQTT credentials in voc.conf
 
