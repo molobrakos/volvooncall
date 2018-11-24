@@ -3,7 +3,8 @@ from volvooncall import Connection
 from asynctest import patch
 
 
-async def mocked_request(method, url, rel=None, **kwargs):
+def mocked_request(method, url, rel=None, **kwargs):
+
     if 'customeraccounts' in url:
         return {
             'username': 'foobar',
@@ -82,14 +83,14 @@ async def test_ers(event_loop):
 
 async def get_started_vehicle():
 
-    async def mocked_request_ers(method, url, rel=None, **kwargs):
+    def mocked_request_ers(method, url, rel=None, **kwargs):
         if 'status' in url:
             return {
                 'engineRunning': False,
                 'engineStartSupported': True,
                 'ERS': {'status': 'on'},
             }
-        return await mocked_request(method, url, rel, **kwargs)
+        return mocked_request(method, url, rel, **kwargs)
 
     vehicle = await get_vehicle()
     with patch('volvooncall.Connection._request',
