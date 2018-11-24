@@ -15,10 +15,9 @@ import asyncio
 import aiohttp
 import contextlib
 
-from requests import Session, RequestException
 from requests.compat import urljoin
 
-from util import obj_parser, json_serialize, is_valid_path, find_path, json_loads
+from util import json_serialize, is_valid_path, find_path, json_loads
 from util import owntracks_encrypt  # noqa: F401
 
 _ = version_info >= (3, 7) or exit('Python 3.7 required')
@@ -42,9 +41,12 @@ TIMEOUT = timedelta(seconds=30)
 _LOGGER.debug('Loaded %s version: %s', __name__, __version__)
 
 
-class Connection(contextlib.AbstractAsyncContextManager):
+class Connection(
+        contextlib.AbstractAsyncContextManager):  # pylint: disable=no-member
 
     """Connection to the VOC server."""
+
+    from aiohttp.hdrs import METH_GET, METH_POST
 
     def __init__(self, username, password,
                  service_url=None, region=None, **_):
@@ -66,27 +68,27 @@ class Connection(contextlib.AbstractAsyncContextManager):
     async def __aexit__(self, exc_type, exc, tb):
         await self._session.close()
 
-    async def _request(self, method, ref, rel=None):
+    async def _request(self, method, ref, rel=None, **kwargs):
         """Perform a query to the online service."""
         try:
             url = urljoin(rel or self._service_url, ref)
             _LOGGER.debug('Request for %s', url)
-            async with method(url) as response:
+            async with self._session.request(method, url, **kwargs) as response:
                 res = await response.json(loads=json_loads)
                 _LOGGER.debug('Received %s', res)
                 return res
-        except RequestException as error:
+        except Exception as error:
             _LOGGER.warning('Failure when communcating with the server: %s',
                             error)
             raise
 
-    async def get(self, ref, rel=None):
+    async def get(self, url, **kwargs):
         """Perform a query to the online service."""
-        return await self._request(self._session.get, ref, rel)
+        return await self._request(Connection.METH_GET, url, **kwargs)
 
-    async def post(self, ref, rel=None, **data):
+    async def post(self, url, data, **kwargs):
         """Perform a query to the online service."""
-        return await self._request(partial(self._session.post, json=data), ref, rel)
+        return await self._request(Connection.METH_POST, json=data, **kwargs)
 
     async def update(self, journal=False, reset=False):
         """Update status."""
@@ -101,7 +103,7 @@ class Connection(contextlib.AbstractAsyncContextManager):
                 for vehicle in user['accountVehicleRelations']:
                     rel = await self.get(vehicle)
                     url = rel['vehicle'] + '/'
-                    state = await self.get('attributes', url)
+                    state = await self.get('attributes', rel=url)
                     self._state.update({url: state})
             for vehicle in self.vehicles:
                 await vehicle.update(journal=journal)
@@ -113,12 +115,12 @@ class Connection(contextlib.AbstractAsyncContextManager):
     async def update_vehicle(self, vehicle, journal=False):
         url = vehicle._url
         self._state[url].update(
-            await self.get('status', url))
+            await self.get('status', rel=url))
         self._state[url].update(
-            await self.get('position', url))
+            await self.get('position', rel=url))
         if journal:
             self._state[url].update(
-                await self.get('trips', url))
+                await self.get('trips', rel=url))
 
     @property
     def vehicles(self):
@@ -284,7 +286,7 @@ class Vehicle(object):
 
             _LOGGER.debug('Message delivered')
             return True
-        except RequestException as error:
+        except Exception as error:
             _LOGGER.warning('Failure to execute: %s', error)
 
     @staticmethod
@@ -450,4 +452,5 @@ async def main():
 
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run(main())
