@@ -12,8 +12,7 @@ from json import dumps as to_json
 from collections import OrderedDict
 import asyncio
 import aiohttp
-
-from requests.compat import urljoin
+from urllib.parse import urljoin
 
 from util import json_serialize, is_valid_path, find_path, json_loads
 from util import owntracks_encrypt  # noqa: F401
