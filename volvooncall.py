@@ -12,14 +12,13 @@ from json import dumps as to_json
 from collections import OrderedDict
 import asyncio
 import aiohttp
-import contextlib
 
 from requests.compat import urljoin
 
 from util import json_serialize, is_valid_path, find_path, json_loads
 from util import owntracks_encrypt  # noqa: F401
 
-_ = version_info >= (3, 7) or exit('Python 3.7 required')
+_ = version_info >= (3, 5, 3) or exit('Python 3.7 required')
 
 __version__ = '0.6.13'
 
@@ -40,8 +39,18 @@ TIMEOUT = timedelta(seconds=30)
 _LOGGER.debug('Loaded %s version: %s', __name__, __version__)
 
 
-class Connection(
-        contextlib.AbstractAsyncContextManager):  # pylint: disable=no-member
+try:
+    from contextlib import AbstractAsyncContextManager
+except ImportError:
+    class AbstractAsyncContextManager:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc_value, tb):
+            return None
+
+
+class Connection(AbstractAsyncContextManager):
 
     """Connection to the VOC server."""
 
