@@ -1,8 +1,7 @@
-import asyncio
 import pytest
-from unittest.mock import patch
 from volvooncall import Connection
 from asynctest import patch
+
 
 async def mocked_request(method, url, rel=None, **kwargs):
     if 'customeraccounts' in url:
@@ -42,6 +41,7 @@ async def mocked_request(method, url, rel=None, **kwargs):
         "error": "Unauthorized"
     }
 
+
 @patch('volvooncall.Connection._request', side_effect=mocked_request)
 async def get_vehicle(req_mock):
     async with Connection(username='', password='') as connection:
@@ -67,15 +67,17 @@ async def test_engine():
 async def test_ers(event_loop):
     vehicle = await get_vehicle()
     dashboard = vehicle.dashboard
-    engines = [instrument
-               for instrument in dashboard.instruments
-               if instrument.attr == 'is_engine_running']
+    engine_instruments = [
+        instrument
+        for instrument in dashboard.instruments
+        if instrument.attr == 'is_engine_running']
 
     # a binary sensor and a switch should be present
-    assert(len(engines) == 2)
+    assert(len(engine_instruments) == 2)
 
     # should be off
-    assert(all(not engine.state for engine in engines))
+    assert(all(not engine.state
+               for engine in engine_instruments))
 
 
 async def get_started_vehicle():
@@ -90,8 +92,10 @@ async def get_started_vehicle():
         return await mocked_request(method, url, rel, **kwargs)
 
     vehicle = await get_vehicle()
-    with patch('volvooncall.Connection._request', side_effect=mocked_request_ers) as mock:
+    with patch('volvooncall.Connection._request',
+               side_effect=mocked_request_ers) as mock:
         await vehicle.start_engine()
+        mock.assert_called()
         return vehicle
 
 
@@ -105,12 +109,14 @@ async def test_ers_start():
 async def test_ers_start_dashboard():
     vehicle = await get_started_vehicle()
     dashboard = vehicle.dashboard
-    engines = [instrument
-               for instrument in dashboard.instruments
-               if instrument.attr == 'is_engine_running']
+    engine_instruments = [
+        instrument
+        for instrument in dashboard.instruments
+        if instrument.attr == 'is_engine_running']
 
     # a binary sensor and a switch should be present
-    assert(len(engines) == 2)
+    assert(len(engine_instruments) == 2)
 
     # shold be on
-    assert(all(engine.state for engine in engines))
+    assert(all(engine.state
+               for engine in engine_instruments))

@@ -4,7 +4,6 @@
 
 import logging
 from datetime import timedelta
-from functools import partial
 from sys import argv, version_info
 from os import environ as env
 from os.path import join, dirname, expanduser
@@ -73,7 +72,8 @@ class Connection(
         try:
             url = urljoin(rel or self._service_url, ref)
             _LOGGER.debug('Request for %s', url)
-            async with self._session.request(method, url, **kwargs) as response:
+            async with self._session.request(method, url,
+                                             **kwargs) as response:
                 res = await response.json(loads=json_loads)
                 _LOGGER.debug('Received %s', res)
                 return res
