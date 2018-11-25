@@ -19,7 +19,6 @@ def mocked_request(method, url, rel=None, **kwargs):
     if 'attributes' in url:
         return {
             'registrationNumber': 'FOO123',
-
         }
 
     if 'status' in url:
@@ -44,10 +43,10 @@ def mocked_request(method, url, rel=None, **kwargs):
 
 
 @patch('volvooncall.Connection._request', side_effect=mocked_request)
-async def get_vehicle(req_mock):
+async def get_vehicle(mock):
     async with Connection(username='', password='') as connection:
         await connection.update()
-        req_mock.assert_called()
+        assert mock.called
         return next(connection.vehicles, None)
 
 
@@ -96,7 +95,7 @@ async def get_started_vehicle():
     with patch('volvooncall.Connection._request',
                side_effect=mocked_request_ers) as mock:
         await vehicle.start_engine()
-        mock.assert_called()
+        assert mock.called
         return vehicle
 
 
