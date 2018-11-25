@@ -26,6 +26,7 @@ pypireg:
 	python setup.py register -r pypi
 
 pypi:
+	rm -f dist/*.tar.gz
 	python setup.py sdist
 	twine upload dist/*.tar.gz
 
