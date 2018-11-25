@@ -9,8 +9,7 @@ from os import environ as env
 import string
 from volvooncall import owntracks_encrypt
 from platform import node as hostname
-from dashboard import (Dashboard,
-                       Lock, Position,
+from dashboard import (Lock, Position,
                        Heater, Sensor,
                        BinarySensor, Switch)
 from util import camel2slug, whitelisted
