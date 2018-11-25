@@ -404,11 +404,11 @@ class Vehicle(object):
             _LOGGER.warning('No heater or preclimatization support.')
 
     def __str__(self):
-        return '%s (%s/%d) %s' % (
-            self.registration_number,
-            self.vehicle_type,
-            self.model_year,
-            self.vin)
+        return '%s (%s/%s) %s' % (
+            self.registration_number or '?',
+            self.vehicle_type or '?',
+            self.model_year or '?',
+            self.vin or '?')
 
     @property
     def dashboard(self):
