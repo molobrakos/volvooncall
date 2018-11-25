@@ -66,7 +66,7 @@ async def test_engine():
 @pytest.mark.asyncio
 async def test_ers(event_loop):
     vehicle = await get_vehicle()
-    dashboard = vehicle.dashboard
+    dashboard = vehicle.dashboard()
     engine_instruments = [
         instrument
         for instrument in dashboard.instruments
@@ -108,7 +108,7 @@ async def test_ers_start():
 @pytest.mark.asyncio
 async def test_ers_start_dashboard():
     vehicle = await get_started_vehicle()
-    dashboard = vehicle.dashboard
+    dashboard = vehicle.dashboard()
     engine_instruments = [
         instrument
         for instrument in dashboard.instruments
