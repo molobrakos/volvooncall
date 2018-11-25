@@ -384,7 +384,7 @@ async def run(voc, config):
             if vehicle not in entities:
                 _LOGGER.debug('creating vehicle %s', vehicle)
 
-                dashboard = Dashboard(vehicle, **config)
+                dashboard = vehicle.dashboard(**config)
 
                 entities[vehicle] = [Entity(mqtt,
                                             instrument,

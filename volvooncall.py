@@ -410,10 +410,9 @@ class Vehicle(object):
             self.model_year or '?',
             self.vin or '?')
 
-    @property
-    def dashboard(self):
+    def dashboard(self, **config):
         from dashboard import Dashboard
-        return Dashboard(self)
+        return Dashboard(self, **config)
 
     @property
     def json(self):
