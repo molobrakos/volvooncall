@@ -25,8 +25,8 @@ class Instrument:
     def slug_attr(self):
         return camel2slug(self.attr.replace('.', '_'))
 
-    def setup(self, vehicle, immutable=False, **config):
-        if immutable and self.is_mutable:
+    def setup(self, vehicle, mutable=True, **config):
+        if not mutable and self.is_mutable:
             _LOGGER.info('Skipping %s because mutable', self.attr)
             return False
 
@@ -463,6 +463,7 @@ def create_instruments():
 class Dashboard:
 
     def __init__(self, vehicle, **config):
+        _LOGGER.debug('Setting up dashboard with config :%s', config)
         self.instruments = [
             instrument
             for instrument in create_instruments()
