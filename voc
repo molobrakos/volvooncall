@@ -254,6 +254,19 @@ if __name__ == '__main__':
         _LOGGER.info('Debug is on')
 
     try:
-        asyncio.run(main(args), debug=debug)
+        from asyncio import run
+    except ImportError:
+        # pre 3.7
+
+        def run(fut, debug=False):
+            loop = asyncio.get_event_loop()
+            loop.set_debug(debug)
+            loop.run_until_complete(fut)
+            loop.close()
+
+        asyncio.create_task = lambda coro: asyncio.Task(coro)
+
+    try:
+        run(main(args), debug=debug)
     except KeyboardInterrupt:
         exit()
