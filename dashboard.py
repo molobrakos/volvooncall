@@ -456,7 +456,7 @@ def create_instruments():
                      device_class='door'),
         BinarySensor(attr='any_window_open',
                      name='Windows',
-                     device_class='door')
+                     device_class='window')
     ]
 
 
