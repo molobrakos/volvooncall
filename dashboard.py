@@ -6,6 +6,9 @@ from util import camel2slug
 _LOGGER = logging.getLogger(__name__)
 
 
+# fixme: move (mapping to) hass component names to config file instead
+
+
 class Instrument:
 
     def __init__(self, component, attr, name, icon=None):
@@ -81,7 +84,10 @@ class Instrument:
 
 class Sensor(Instrument):
     def __init__(self, attr, name, icon, unit):
-        super().__init__('sensor', attr, name, icon)
+        super().__init__(component='sensor',
+                         attr=attr,
+                         name=name,
+                         icon=icon)
         self.unit = unit
 
     def configurate(self, scandinavian_miles=False, **config):
@@ -205,7 +211,9 @@ class JournalLastTrip(Sensor):
 
 class BinarySensor(Instrument):
     def __init__(self, attr, name, device_class):
-        super().__init__('binary_sensor', attr, name)
+        super().__init__(component='binary_sensor',
+                         attr=attr,
+                         name=name)
         self.device_class = device_class
 
     @property
