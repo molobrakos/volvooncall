@@ -19,7 +19,7 @@ from util import owntracks_encrypt  # noqa: F401
 
 _ = version_info >= (3, 5, 3) or exit('Python 3.7 required')
 
-__version__ = '0.7.6'
+__version__ = '0.7.7'
 
 _LOGGER = logging.getLogger(__name__)
 
