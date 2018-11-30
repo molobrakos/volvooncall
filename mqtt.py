@@ -193,8 +193,10 @@ class Entity:
                        availability_topic=self.availability_topic,
                        payload_available=STATE_ONLINE,
                        payload_not_available=STATE_OFFLINE)
-        if self.is_lock or self.is_switch:
+
+        if self.is_mutable:
             payload.update(command_topic=self.command_topic)
+
         if self.is_sensor:
             return dict(payload,
                         icon=instrument.icon,
@@ -269,6 +271,10 @@ class Entity:
                 'No command to execute for %s: %s', self, command)
 
     @property
+    def is_mutable(self):
+        return self.is_lock or self.is_switch
+
+    @property
     def is_sensor(self):
         return isinstance(self.instrument, Sensor)
 
@@ -298,14 +304,11 @@ class Entity:
     def is_lock(self):
         return isinstance(self.instrument, Lock)
 
-    @property
-    def is_heater(self):
-        return isinstance(self.instrument, Heater)
-
     async def publish_discovery(self):
         if self.is_position:
             return
-        await self.subscribe_to(self.command_topic)
+        if self.is_mutable:
+            await self.subscribe_to(self.command_topic)
         await self.publish(self.discovery_topic,
                            self.discovery_payload)
 
