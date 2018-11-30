@@ -10,8 +10,7 @@ import string
 from volvooncall import owntracks_encrypt
 from platform import node as hostname
 from dashboard import (Lock, Position,
-                       Heater, Sensor,
-                       BinarySensor, Switch)
+                       Sensor, BinarySensor, Switch)
 from util import camel2slug, whitelisted
 from hbmqtt.client import MQTTClient, ConnectException, ClientException
 import asyncio
