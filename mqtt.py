@@ -395,8 +395,8 @@ async def run(voc, config):
                               entity.instrument.full_name, entity.state)
                 wait_list.append(entity.publish_discovery())
                 wait_list.append(entity.publish_availability(available))
-            if available:
-                wait_list.append(entity.publish_state())
+                if available:
+                    wait_list.append(entity.publish_state())
 
         await asyncio.gather(*wait_list)
         _LOGGER.debug('Waiting for new VOC update in %d seconds', interval)
