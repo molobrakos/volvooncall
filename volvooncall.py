@@ -245,8 +245,8 @@ class Vehicle(object):
 
     @property
     def is_engine_running(self):
-        engine_remote_start_status = self.attrs.get('ERS',
-                                                    {}).get('status', '')
+        engine_remote_start_status = self.attrs.get(
+            'ERS', {}).get('status') or ''
         return (self.attrs.get('engineRunning') or
                 'on' in engine_remote_start_status)
 
