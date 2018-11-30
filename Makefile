@@ -33,7 +33,7 @@ pypi:
 release:
 	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags && make pypi
 
-IMAGE=molobrakos/voc
+IMAGE=molobrakos/volvooncall
 
 docker-build:
 	docker build -t $(IMAGE) .
