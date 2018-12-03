@@ -11,6 +11,7 @@ from itertools import product
 from json import dumps as to_json
 from collections import OrderedDict
 import asyncio
+from aiohttp.hdrs import METH_GET, METH_POST
 import aiohttp
 from urllib.parse import urljoin
 
@@ -56,8 +57,6 @@ class Connection(AbstractAsyncContextManager):
 
     """Connection to the VOC server."""
 
-    from aiohttp.hdrs import METH_GET, METH_POST
-
     def __init__(self, username, password, service_url=None, region=None, **_):
         """Initialize."""
         _LOGGER.info("Initializing %s version: %s", __name__, __version__)
@@ -80,10 +79,9 @@ class Connection(AbstractAsyncContextManager):
     async def __aexit__(self, exc_type, exc, tb):
         await self._session.close()
 
-    async def _request(self, method, ref, rel=None, **kwargs):
+    async def _request(self, method, url, **kwargs):
         """Perform a query to the online service."""
         try:
-            url = urljoin(rel or self._service_url, ref)
             _LOGGER.debug("Request for %s", url)
             async with self._session.request(
                 method, url, **kwargs
@@ -97,13 +95,18 @@ class Connection(AbstractAsyncContextManager):
             )
             raise
 
+    async def _request_rel(self, method, ref, rel=None, **kwargs):
+        """Perform a query to the online service."""
+        url = urljoin(rel or self._service_url, ref)
+        return await self._request(method, url, **kwargs)
+
     async def get(self, url, **kwargs):
         """Perform a query to the online service."""
-        return await self._request(Connection.METH_GET, url, **kwargs)
+        return await self._request_rel(METH_GET, url, **kwargs)
 
     async def post(self, url, data, **kwargs):
         """Perform a query to the online service."""
-        return await self._request(Connection.METH_POST, json=data, **kwargs)
+        return await self._request_rel(METH_POST, url, json=data, **kwargs)
 
     async def update(self, journal=False, reset=False):
         """Update status."""
