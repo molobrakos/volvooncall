@@ -382,7 +382,7 @@ class Vehicle(object):
 
     async def start_engine(self):
         if self.is_engine_start_supported:
-            await self.call("engine/start", runtime=5)
+            await self.call("engine/start", runtime=15)
             await self.update()
         else:
             _LOGGER.warning("Engine start not supported.")
