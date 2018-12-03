@@ -9,7 +9,7 @@ def obj_parser(obj):
     """Parse datetime."""
     for key, val in obj.items():
         try:
-            obj[key] = datetime.strptime(val, '%Y-%m-%dT%H:%M:%S%z')
+            obj[key] = datetime.strptime(val, "%Y-%m-%dT%H:%M:%S%z")
         except (TypeError, ValueError):
             pass
     return obj
@@ -59,7 +59,7 @@ def find_path(src, path):
     if not path:
         return src
     if isinstance(path, str):
-        path = path.split('.')
+        path = path.split(".")
     return find_path(src[path[0]], path[1:])
 
 
@@ -88,18 +88,19 @@ def owntracks_encrypt(msg, key):
     try:
         from libnacl import crypto_secretbox_KEYBYTES as keylen
         from libnacl.secret import SecretBox as secret
-        key = key.encode('utf-8')
+
+        key = key.encode("utf-8")
         key = key[:keylen]
-        key = key.ljust(keylen, b'\0')
-        msg = msg.encode('utf-8')
+        key = key.ljust(keylen, b"\0")
+        msg = msg.encode("utf-8")
         ciphertext = secret(key).encrypt(msg)
         ciphertext = b64encode(ciphertext)
-        ciphertext = ciphertext.decode('ascii')
+        ciphertext = ciphertext.decode("ascii")
         return ciphertext
     except ImportError:
-        exit('libnacl missing')
+        exit("libnacl missing")
     except OSError:
-        exit('libsodium missing')
+        exit("libsodium missing")
 
 
 def camel2slug(s):
@@ -111,9 +112,7 @@ def camel2slug(s):
     return re.sub("([A-Z])", "_\\1", s).lower().lstrip("_")
 
 
-def whitelisted(s,
-                whitelist=letters + digits,
-                substitute=''):
+def whitelisted(s, whitelist=letters + digits, substitute=""):
     """
     >>> whitelisted("ab/cd#ef(gh")
     'abcdefgh'
@@ -124,4 +123,4 @@ def whitelisted(s,
     >>> whitelisted("ab/cd#ef(gh", substitute='')
     'abcdefgh'
    """
-    return ''.join(c if c in whitelist else substitute for c in s)
+    return "".join(c if c in whitelist else substitute for c in s)

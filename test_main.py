@@ -5,46 +5,34 @@ from asynctest import patch
 
 def mocked_request(method, url, rel=None, **kwargs):
 
-    if 'customeraccounts' in url:
+    if "customeraccounts" in url:
+        return {"username": "foobar", "accountVehicleRelations": ["rel/1"]}
+
+    if "rel" in url:
+        return {"vehicle": "vehicle/1"}
+
+    if "attributes" in url:
+        return {"registrationNumber": "FOO123"}
+
+    if "status" in url:
         return {
-            'username': 'foobar',
-            'accountVehicleRelations': ['rel/1']
+            "engineRunning": False,
+            "engineStartSupported": True,
+            "ERS": {"status": "off"},
         }
 
-    if 'rel' in url:
-        return {
-            'vehicle': 'vehicle/1'
-        }
-
-    if 'attributes' in url:
-        return {
-            'registrationNumber': 'FOO123',
-        }
-
-    if 'status' in url:
-        return {
-            'engineRunning': False,
-            'engineStartSupported': True,
-            'ERS': {'status': 'off'},
-        }
-
-    if 'position' in url:
+    if "position" in url:
         return {}
 
-    if 'engine/start' in url:
-        return {
-            'service': 'engine/start',
-            'status': 'Started'
-        }
+    if "engine/start" in url:
+        return {"service": "engine/start", "status": "Started"}
 
-    return {
-        "error": "Unauthorized"
-    }
+    return {"error": "Unauthorized"}
 
 
-@patch('volvooncall.Connection._request', side_effect=mocked_request)
+@patch("volvooncall.Connection._request", side_effect=mocked_request)
 async def get_vehicle(mock):
-    async with Connection(username='', password='') as connection:
+    async with Connection(username="", password="") as connection:
         await connection.update()
         assert mock.called
         return next(connection.vehicles, None)
@@ -53,14 +41,14 @@ async def get_vehicle(mock):
 @pytest.mark.asyncio
 async def test_basic():
     vehicle = await get_vehicle()
-    assert(vehicle)
-    assert(vehicle.registration_number == 'FOO123')
+    assert vehicle
+    assert vehicle.registration_number == "FOO123"
 
 
 @pytest.mark.asyncio
 async def test_engine():
     vehicle = await get_vehicle()
-    assert(not vehicle.is_engine_running)
+    assert not vehicle.is_engine_running
 
 
 @pytest.mark.asyncio
@@ -70,30 +58,30 @@ async def test_ers(event_loop):
     engine_instruments = [
         instrument
         for instrument in dashboard.instruments
-        if instrument.attr == 'is_engine_running']
+        if instrument.attr == "is_engine_running"
+    ]
 
     # a binary sensor and a switch should be present
-    assert(len(engine_instruments) == 2)
+    assert len(engine_instruments) == 2
 
     # should be off
-    assert(all(not engine.state
-               for engine in engine_instruments))
+    assert all(not engine.state for engine in engine_instruments)
 
 
 async def get_started_vehicle():
-
     def mocked_request_ers(method, url, rel=None, **kwargs):
-        if 'status' in url:
+        if "status" in url:
             return {
-                'engineRunning': False,
-                'engineStartSupported': True,
-                'ERS': {'status': 'on'},
+                "engineRunning": False,
+                "engineStartSupported": True,
+                "ERS": {"status": "on"},
             }
         return mocked_request(method, url, rel, **kwargs)
 
     vehicle = await get_vehicle()
-    with patch('volvooncall.Connection._request',
-               side_effect=mocked_request_ers) as mock:
+    with patch(
+        "volvooncall.Connection._request", side_effect=mocked_request_ers
+    ) as mock:
         await vehicle.start_engine()
         assert mock.called
         return vehicle
@@ -102,7 +90,7 @@ async def get_started_vehicle():
 @pytest.mark.asyncio
 async def test_ers_start():
     vehicle = await get_started_vehicle()
-    assert(vehicle.is_engine_running)
+    assert vehicle.is_engine_running
 
 
 @pytest.mark.asyncio
@@ -112,11 +100,11 @@ async def test_ers_start_dashboard():
     engine_instruments = [
         instrument
         for instrument in dashboard.instruments
-        if instrument.attr == 'is_engine_running']
+        if instrument.attr == "is_engine_running"
+    ]
 
     # a binary sensor and a switch should be present
-    assert(len(engine_instruments) == 2)
+    assert len(engine_instruments) == 2
 
     # shold be on
-    assert(all(engine.state
-               for engine in engine_instruments))
+    assert all(engine.state for engine in engine_instruments)
