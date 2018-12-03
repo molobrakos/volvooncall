@@ -33,14 +33,14 @@ pypi:
 release:
 	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags && make pypi
 
-IMAGE=molobrakos/voc
+IMAGE=molobrakos/volvooncall
 
 docker-build:
 	docker build -t $(IMAGE) .
 
 docker-run-mqtt:
 	docker run \
-                --name=voc \
+                --name=volvooncall \
 		--restart=always \
 		--detach \
 		--net=bridge \
@@ -51,7 +51,7 @@ docker-run-mqtt:
 docker-run-mqtt-term:
 	docker run \
                 -ti --rm \
-                --name=voc \
+                --name=volvooncall \
 		--net=bridge \
 		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
