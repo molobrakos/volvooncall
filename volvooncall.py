@@ -83,6 +83,7 @@ class Connection(AbstractAsyncContextManager):
         """Perform a query to the online service."""
         try:
             _LOGGER.debug("Request for %s", url)
+
             async with self._session.request(
                 method, url, **kwargs
             ) as response:
@@ -95,18 +96,16 @@ class Connection(AbstractAsyncContextManager):
             )
             raise
 
-    async def _request_rel(self, method, ref, rel=None, **kwargs):
-        """Perform a query to the online service."""
-        url = urljoin(rel or self._service_url, ref)
-        return await self._request(method, url, **kwargs)
+    def _make_url(self, ref, rel=None):
+        return urljoin(rel or self._service_url, ref)
 
-    async def get(self, url, **kwargs):
+    async def get(self, url, rel=None):
         """Perform a query to the online service."""
-        return await self._request_rel(METH_GET, url, **kwargs)
+        return await self._request(METH_GET, self._make_url(url, rel))
 
-    async def post(self, url, data, **kwargs):
+    async def post(self, url, rel=None, **data):
         """Perform a query to the online service."""
-        return await self._request_rel(METH_POST, url, json=data, **kwargs)
+        return await self._request(METH_POST, self._make_url(url, rel), json=data)
 
     async def update(self, journal=False, reset=False):
         """Update status."""
