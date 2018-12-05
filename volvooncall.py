@@ -105,7 +105,9 @@ class Connection(AbstractAsyncContextManager):
 
     async def post(self, url, rel=None, **data):
         """Perform a query to the online service."""
-        return await self._request(METH_POST, self._make_url(url, rel), json=data)
+        return await self._request(
+            METH_POST, self._make_url(url, rel), json=data
+        )
 
     async def update(self, journal=False, reset=False):
         """Update status."""
