@@ -32,10 +32,10 @@ def mocked_request(method, url, rel=None, **kwargs):
 
 @patch("volvooncall.Connection._request", side_effect=mocked_request)
 async def get_vehicle(mock):
-    async with Connection(username="", password="") as connection:
-        await connection.update()
-        assert mock.called
-        return next(connection.vehicles, None)
+    connection = Connection(session=None, username="", password="")
+    await connection.update()
+    assert mock.called
+    return next(connection.vehicles, None)
 
 
 @pytest.mark.asyncio

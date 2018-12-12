@@ -12,7 +12,7 @@ from json import dumps as to_json
 from collections import OrderedDict
 import asyncio
 from aiohttp.hdrs import METH_GET, METH_POST
-from aiohttp import ClientTimeout, BasicAuth
+from aiohttp import ClientSession, ClientTimeout, BasicAuth
 from urllib.parse import urljoin
 
 from util import json_serialize, is_valid_path, find_path, json_loads
@@ -65,9 +65,6 @@ class Connection:
         self._state = {}
         _LOGGER.debug("Using service <%s>", self._service_url)
         _LOGGER.debug("User: <%s>", username)
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self._session.close()
 
     async def _request(self, method, url, **kwargs):
         """Perform a query to the online service."""
@@ -472,7 +469,8 @@ async def main():
     else:
         logging.basicConfig(level=logging.ERROR)
 
-    async with Connection(**read_credentials()) as connection:
+    async with ClientSession() as session:
+        connection = Connection(session, **read_credentials())
         if await connection.update():
             for vehicle in connection.vehicles:
                 print(vehicle)
