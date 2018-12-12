@@ -20,7 +20,9 @@ from util import owntracks_encrypt  # noqa: F401
 
 MIN_PYTHON_VERSION = (3, 5, 3)
 
-_ = version_info >= MIN_PYTHON_VERSION or exit("Python %d.%d.%d required" % MIN_PYTHON_VERSION)
+_ = version_info >= MIN_PYTHON_VERSION or exit(
+    "Python %d.%d.%d required" % MIN_PYTHON_VERSION
+)
 
 __version__ = "0.7.11"
 
@@ -43,11 +45,13 @@ TIMEOUT = timedelta(seconds=30)
 _LOGGER.debug("Loaded %s version: %s", __name__, __version__)
 
 
-class Connection():
+class Connection:
 
     """Connection to the VOC server."""
 
-    def __init__(self, session, username, password, service_url=None, region=None, **_):
+    def __init__(
+        self, session, username, password, service_url=None, region=None, **_
+    ):
         """Initialize."""
         _LOGGER.info("Initializing %s version: %s", __name__, __version__)
 
@@ -71,11 +75,12 @@ class Connection():
             _LOGGER.debug("Request for %s", url)
 
             async with self._session.request(
-                    method, url,
-                    headers=HEADERS,
-                    auth=self._auth,
-                    timeout=ClientTimeout(total=TIMEOUT.seconds),
-                    **kwargs
+                method,
+                url,
+                headers=HEADERS,
+                auth=self._auth,
+                timeout=ClientTimeout(total=TIMEOUT.seconds),
+                **kwargs
             ) as response:
                 response.raise_for_status()
                 res = await response.json(loads=json_loads)
