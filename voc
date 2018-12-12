@@ -45,6 +45,7 @@ from json import dumps as to_json
 from sys import stderr
 from collections import OrderedDict
 from datetime import timezone
+from aiohttp import ClientSession
 from volvooncall import (
     __version__,
     read_credentials,
@@ -139,7 +140,9 @@ async def main(args):
     if args["--immutable"] or "--immutable" not in credentials:
         credentials.update(immutable=args["--immutable"])
 
-    async with Connection(**credentials) as connection:
+    async with ClientSession() as session:
+
+        connection = Connection(session, **credentials)
 
         if args["mqtt"]:
             import mqtt
