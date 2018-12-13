@@ -42,9 +42,6 @@ HEADERS = {
 TIMEOUT = timedelta(seconds=30)
 
 
-_LOGGER.debug("Loaded %s version: %s", __name__, __version__)
-
-
 class Connection:
 
     """Connection to the VOC server."""
