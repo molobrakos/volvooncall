@@ -1,5 +1,8 @@
 default: check
 
+black:
+	white . voc
+
 lint: requirements.txt setup.py
 	tox -e lint
 
@@ -31,7 +34,7 @@ pypi:
 	twine upload dist/*.tar.gz
 
 release:
-	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags && make pypi
+	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags && git push && make pypi
 
 IMAGE=molobrakos/volvooncall
 
@@ -40,7 +43,7 @@ docker-build:
 
 docker-run-mqtt:
 	docker run \
-                --name=voc \
+                --name=volvooncall \
 		--restart=always \
 		--detach \
 		--net=bridge \
@@ -51,7 +54,7 @@ docker-run-mqtt:
 docker-run-mqtt-term:
 	docker run \
                 -ti --rm \
-                --name=voc \
+                --name=volvooncall \
 		--net=bridge \
 		-v $(HOME)/.config/voc.conf:/app/.config/voc.conf:ro \
 		-v $(HOME)/.config/mosquitto_pub:/app/.config/mosquitto_pub:ro \
