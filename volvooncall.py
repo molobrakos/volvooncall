@@ -53,7 +53,7 @@ class Connection:
         self, session, username, password, service_url=None, region=None, **_
     ):
         """Initialize."""
-        _LOGGER.info("Initializing %s version: %s", __name__, __version__)
+        _LOGGER.info("%s %s %s", __name__, __version__, __file__)
 
         self._session = session
         self._auth = BasicAuth(username, password)
