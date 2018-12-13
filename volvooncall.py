@@ -24,7 +24,7 @@ _ = version_info >= MIN_PYTHON_VERSION or exit(
     "Python %d.%d.%d required" % MIN_PYTHON_VERSION
 )
 
-__version__ = "0.8.0"
+__version__ = "0.8.1"
 
 _LOGGER = logging.getLogger(__name__)
 
