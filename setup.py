@@ -11,8 +11,7 @@ setup(
     author="Erik",
     author_email="error.errorsson@gmail.com",
     scripts=["voc"],
-    py_modules=["volvooncall", "mqtt", "util", "dashboard"],
-    provides=["volvooncall"],
+    packages=["volvooncall"],
     install_requires=list(open("requirements.txt").read().strip().split("\n")),
     extras_require={"console": ["docopt"]},
 )
