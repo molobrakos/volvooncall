@@ -27,11 +27,11 @@ pypireg:
 
 pypi:
 	rm -f dist/*.tar.gz
-	python setup.py sdist
+	python3 setup.py sdist
 	twine upload dist/*.tar.gz
 
 release:
-	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags && make pypi
+	git diff-index --quiet HEAD -- && make check && bumpversion patch && git push --tags && git push && make pypi
 
 IMAGE=molobrakos/volvooncall
 
