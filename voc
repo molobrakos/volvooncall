@@ -45,7 +45,9 @@ from json import dumps as to_json
 from sys import stderr
 from collections import OrderedDict
 from datetime import timezone
-from aiohttp import ClientSession
+import ssl
+import certifi
+from aiohttp import ClientSession, TCPConnector
 from volvooncall import __version__, Connection
 from volvooncall.util import (
     read_credentials,
@@ -58,18 +60,17 @@ _LOGGER = logging.getLogger(__name__)
 LOGFMT = "%(asctime)s %(levelname)5s (%(threadName)s) [%(name)s] %(message)s"
 DATEFMT = "%y-%m-%d %H:%M.%S"
 
+SSL_CONTEXT = ssl.create_default_context(cafile = certifi.where())
 
 def lookup_position(lat, lon):
     try:
-        import ssl
-        import certifi
         import geopy.geocoders
         from geopy.geocoders import Nominatim
 
         geolocator = Nominatim(
             user_agent="volvooncall/%s" % __version__,
             timeout=10,
-            ssl_context=ssl.create_default_context(cafile=certifi.where()),
+            ssl_context=SSL_CONTEXT,
         )
         return geolocator.reverse((lat, lon))
     except ImportError:
@@ -139,7 +140,7 @@ async def main(args):
     if args["--immutable"] or "--immutable" not in credentials:
         credentials.update(immutable=args["--immutable"])
 
-    async with ClientSession() as session:
+    async with ClientSession(connector=TCPConnector(ssl=SSL_CONTEXT)) as session:
 
         try:
             connection = Connection(session, **credentials)
