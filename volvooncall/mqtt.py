@@ -277,7 +277,7 @@ class Entity:
 
     def receive_command(self, command):
 
-        run = asyncio.create_task
+        run = asyncio.create_task  # pylint:disable=no-member
 
         if self.is_lock:
             if command == STATE_LOCK:
@@ -406,7 +406,7 @@ async def run(voc, config):
             except ClientException as e:
                 _LOGGER.error("MQTT Client exception: %s", e)
 
-    asyncio.create_task(mqtt_task())
+    asyncio.create_task(mqtt_task())  # pylint:disable=no-member
 
     interval = int(config["interval"])
     _LOGGER.info("Polling VOC every %d seconds", interval)
