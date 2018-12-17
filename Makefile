@@ -1,5 +1,9 @@
 default: check
 
+format: white
+
+white: black
+
 black:
 	white . voc
 
@@ -10,7 +14,6 @@ test: requirements.txt setup.py
 	tox
 
 check: lint test
-
 
 clean:
 	rm -f *.pyc
