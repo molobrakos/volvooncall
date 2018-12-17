@@ -46,10 +46,9 @@ from sys import stderr
 from collections import OrderedDict
 from datetime import timezone
 from aiohttp import ClientSession
-from volvooncall import (
-    __version__,
+from volvooncall import __version__, Connection
+from volvooncall.util import (
     read_credentials,
-    Connection,
     json_serialize,
     owntracks_encrypt,
 )
@@ -148,7 +147,7 @@ async def main(args):
             exit("Missing configuration: %s" % error)
 
         if args["mqtt"]:
-            import mqtt
+            from volvooncall import mqtt
 
             return await mqtt.run(connection, credentials)
 
