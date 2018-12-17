@@ -20,7 +20,7 @@ from .util import (
     read_credentials,
 )
 
-__version__ = "0.8.6"
+__version__ = "0.8.7"
 
 _LOGGER = logging.getLogger(__name__)
 
