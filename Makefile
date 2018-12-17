@@ -1,5 +1,8 @@
 default: check
 
+black:
+	white . voc
+
 lint: requirements.txt setup.py
 	tox -e lint
 

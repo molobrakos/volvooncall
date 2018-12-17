@@ -12,15 +12,19 @@ from json import dumps as to_json
 from collections import OrderedDict
 import asyncio
 from aiohttp.hdrs import METH_GET, METH_POST
-import aiohttp
+from aiohttp import ClientSession, ClientTimeout, BasicAuth
 from urllib.parse import urljoin
 
 from util import json_serialize, is_valid_path, find_path, json_loads
 from util import owntracks_encrypt  # noqa: F401
 
-_ = version_info >= (3, 5, 3) or exit("Python 3.7 required")
+MIN_PYTHON_VERSION = (3, 5, 3)
 
-__version__ = "0.7.10"
+_ = version_info >= MIN_PYTHON_VERSION or exit(
+    "Python %d.%d.%d required" % MIN_PYTHON_VERSION
+)
+
+__version__ = "0.8.2"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,35 +42,18 @@ HEADERS = {
 TIMEOUT = timedelta(seconds=30)
 
 
-_LOGGER.debug("Loaded %s version: %s", __name__, __version__)
-
-
-try:
-    from contextlib import AbstractAsyncContextManager
-except ImportError:
-
-    class AbstractAsyncContextManager:
-        async def __aenter__(self):
-            return self
-
-        async def __aexit__(self, exc_type, exc_value, tb):
-            return None
-
-
-class Connection(AbstractAsyncContextManager):
+class Connection:
 
     """Connection to the VOC server."""
 
-    def __init__(self, username, password, service_url=None, region=None, **_):
+    def __init__(
+        self, session, username, password, service_url=None, region=None, **_
+    ):
         """Initialize."""
-        _LOGGER.info("Initializing %s version: %s", __name__, __version__)
+        _LOGGER.info("%s %s %s", __name__, __version__, __file__)
 
-        self._session = aiohttp.ClientSession(
-            headers=HEADERS,
-            raise_for_status=True,
-            auth=aiohttp.BasicAuth(username, password),
-            timeout=aiohttp.ClientTimeout(total=TIMEOUT.seconds),
-        )
+        self._session = session
+        self._auth = BasicAuth(username, password)
         self._service_url = (
             SERVICE_URL.format(region="-" + region)
             if region
@@ -76,17 +63,20 @@ class Connection(AbstractAsyncContextManager):
         _LOGGER.debug("Using service <%s>", self._service_url)
         _LOGGER.debug("User: <%s>", username)
 
-    async def __aexit__(self, exc_type, exc, tb):
-        await self._session.close()
-
     async def _request(self, method, url, **kwargs):
         """Perform a query to the online service."""
         try:
             _LOGGER.debug("Request for %s", url)
 
             async with self._session.request(
-                method, url, **kwargs
+                method,
+                url,
+                headers=HEADERS,
+                auth=self._auth,
+                timeout=ClientTimeout(total=TIMEOUT.seconds),
+                **kwargs
             ) as response:
+                response.raise_for_status()
                 res = await response.json(loads=json_loads)
                 _LOGGER.debug("Received %s", res)
                 return res
@@ -476,7 +466,8 @@ async def main():
     else:
         logging.basicConfig(level=logging.ERROR)
 
-    async with Connection(**read_credentials()) as connection:
+    async with ClientSession() as session:
+        connection = Connection(session, **read_credentials())
         if await connection.update():
             for vehicle in connection.vehicles:
                 print(vehicle)
