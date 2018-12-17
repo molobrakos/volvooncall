@@ -1,5 +1,5 @@
 setuptools
-geopy
+geopy>=1.14.0
 docopt
 pyyaml
 certifi
