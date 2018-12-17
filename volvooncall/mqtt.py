@@ -12,6 +12,7 @@ from .dashboard import Lock, Position, Sensor, BinarySensor, Switch
 from .util import camel2slug, whitelisted, owntracks_encrypt
 from hbmqtt.client import MQTTClient, ConnectException, ClientException
 import asyncio
+import certifi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -390,7 +391,7 @@ async def run(voc, config):
 
     async def mqtt_task():
         try:
-            await mqtt.connect(url, cleansession=False)
+            await mqtt.connect(url, cleansession=False, cafile=certifi.where())
             _LOGGER.info("Connected to MQTT server")
         except ConnectException as e:
             exit("Could not connect to MQTT server: %s" % e)
