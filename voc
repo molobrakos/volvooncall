@@ -142,7 +142,10 @@ async def main(args):
 
     async with ClientSession() as session:
 
-        connection = Connection(session, **credentials)
+        try:
+            connection = Connection(session, **credentials)
+        except TypeError as error:
+            exit("Missing configuration: %s" % error)
 
         if args["mqtt"]:
             import mqtt
