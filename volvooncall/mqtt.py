@@ -135,7 +135,7 @@ class Entity:
         elif self.is_binary_sensor:
             return (STATE_OFF, STATE_ON)[state]
         elif self.is_position:
-            lat, lon = state
+            lat, lon, timestamp, speed, heading = state
             key = self.config.get(CONF_OWNTRACKS_KEY)
             res = dict(
                 _type="location",
@@ -145,7 +145,15 @@ class Entity:
                 lon=lon,
                 acc=1,
                 tst=int(time()),
+                now=int(time()),
             )
+            if timestamp is not None:
+                res['tst'] = int(timestamp.timestamp())
+                res['tst_iso'] = timestamp.isoformat()
+            if speed is not None:
+                res['speed'] = speed
+            if heading is not None:
+                res['heading'] = heading
             return (
                 dict(
                     _type="encrypted",
