@@ -371,11 +371,14 @@ async def run(voc, config):
         hostname=hostname(), time=time()
     )
 
-    mqtt_config = read_mqtt_config()
     mqtt = MQTTClient(client_id=client_id)
-    url = mqtt_config.get("url")
+    url = config.get("mqtt_url")
 
-    if not url:
+    if url:
+        _LOGGER.debug("Using MQTT url from voc.conf")
+    else:
+        _LOGGER.debug("Using MQTT url from mosquitto_pub")
+        mqtt_config = read_mqtt_config()
         try:
             username = mqtt_config["username"]
             password = mqtt_config["password"]
