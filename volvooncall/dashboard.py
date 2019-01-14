@@ -352,7 +352,13 @@ class Position(Instrument):
     @property
     def state(self):
         state = super().state or {}
-        return (state.get("latitude", "?"), state.get("longitude", "?"), state.get("timestamp", None), state.get("speed", None), state.get("heading", None))
+        return (
+            state.get("latitude", "?"),
+            state.get("longitude", "?"),
+            state.get("timestamp", None),
+            state.get("speed", None),
+            state.get("heading", None),
+        )
 
 
 #  FIXME: Maybe make this list configurable as external yaml

@@ -148,12 +148,12 @@ class Entity:
                 now=int(time()),
             )
             if timestamp is not None:
-                res['tst'] = int(timestamp.timestamp())
-                res['tst_iso'] = timestamp.isoformat()
+                res["tst"] = int(timestamp.timestamp())
+                res["tst_iso"] = timestamp.isoformat()
             if speed is not None:
-                res['speed'] = speed
+                res["speed"] = speed
             if heading is not None:
-                res['heading'] = heading
+                res["heading"] = heading
             return (
                 dict(
                     _type="encrypted",
