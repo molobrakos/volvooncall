@@ -9,5 +9,7 @@ matrix:
     - python: "3.7"
       env: TOXENV=py37
       dist: xenial
+    - python: "3.6"
+      env: TOXENV=lint
 install: pip install tox
 script: tox
