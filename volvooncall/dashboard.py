@@ -410,6 +410,10 @@ def create_instruments():
         BinarySensor(
             attr="is_engine_running", name="Engine", device_class="power"
         ),
+        BinarySensor(
+            attr='is_locked',
+            name='Door lock',
+            device_class='lock'),
         BinarySensor(attr="doors.hoodOpen", name="Hood", device_class="door"),
         BinarySensor(
             attr="doors.frontLeftDoorOpen",
