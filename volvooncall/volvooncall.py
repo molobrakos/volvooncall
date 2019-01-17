@@ -17,7 +17,7 @@ from .util import (
     is_valid_path,
     find_path,
     json_loads,
-    read_credentials,
+    read_config,
 )
 
 __version__ = "0.8.8"
