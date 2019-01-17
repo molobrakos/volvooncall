@@ -28,11 +28,11 @@ class Instrument:
         return camel2slug(self.attr.replace(".", "_"))
 
     def setup(self, vehicle, mutable=True, **config):
-        if not mutable and self.is_mutable:
-            _LOGGER.info("Skipping %s because mutable", self.attr)
-            return False
-
         self.vehicle = vehicle
+
+        if not mutable and self.is_mutable:
+            _LOGGER.info("Skipping %s because mutable", self)
+            return False
 
         if not self.is_supported:
             _LOGGER.debug(
