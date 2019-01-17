@@ -68,7 +68,7 @@ def make_topic(*levels):
 
 
 def read_mqtt_config():
-    """Read credentials from ~/.config/mosquitto_pub."""
+    """Read config from ~/.config/mosquitto_pub."""
     fname = join(
         env.get("XDG_CONFIG_HOME", join(expanduser("~"), ".config")),
         "mosquitto_pub",
@@ -372,8 +372,6 @@ async def run(voc, config):
     logging.getLogger("hbmqtt.client.plugins.packet_logger_plugin").setLevel(
         logging.WARNING
     )
-
-    # FIXME: Allow MQTT credentials in voc.conf
 
     client_id = "voc_{hostname}_{time}".format(
         hostname=hostname(), time=time()
