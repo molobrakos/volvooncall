@@ -349,10 +349,10 @@ class Vehicle(object):
         """Return trips."""
         return self.attrs.get("trips")
 
-    def honk_and_blink(self):
+    async def honk_and_blink(self):
         """Honk and blink."""
         if self.is_honk_and_blink_supported:
-            self.call("honkAndBlink")
+            await self.call("honkAndBlink")
 
     async def lock(self):
         """Lock."""
