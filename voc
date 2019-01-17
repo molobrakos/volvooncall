@@ -132,7 +132,7 @@ async def main(args):
     if args["--scandinavian_miles"] or "--scandinavian_miles" not in config:
         config.update(scandinavian_miles=args["--scandinavian_miles"])
     if args["--immutable"] or "--immutable" not in config:
-        config.update(immutable=args["--immutable"])
+        config.update(mutable=not args["--immutable"])
 
     async with ClientSession(
         connector=TCPConnector(ssl=SSL_CONTEXT)
