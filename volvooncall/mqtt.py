@@ -99,6 +99,9 @@ class Entity:
         self.instrument = instrument
         self.config = config
 
+    def __repr__(self):
+        return self.instrument.name
+
     @classmethod
     def route_message(cls, topic, payload):
         entity = Entity.subscriptions.get(topic)
@@ -187,7 +190,7 @@ class Entity:
 
     @property
     def topic(self):
-        return make_topic(TOPIC_PREFIX, self.vehicle.unique_id, self.object_id)
+        return make_topic(TOPIC_PREFIX, self.vehicle.unique_id, self.instrument.component, self.object_id)
 
     def make_topic(self, *levels):
         return make_topic(self.topic, *levels)
