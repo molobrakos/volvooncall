@@ -190,7 +190,12 @@ class Entity:
 
     @property
     def topic(self):
-        return make_topic(TOPIC_PREFIX, self.vehicle.unique_id, self.instrument.component, self.object_id)
+        return make_topic(
+            TOPIC_PREFIX,
+            self.vehicle.unique_id,
+            self.instrument.component,
+            self.object_id,
+        )
 
     def make_topic(self, *levels):
         return make_topic(self.topic, *levels)
