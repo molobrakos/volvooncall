@@ -439,7 +439,7 @@ async def main():
         logging.basicConfig(level=logging.ERROR)
 
     async with ClientSession() as session:
-        connection = Connection(session, **read_credentials())
+        connection = Connection(session, **read_config())
         if await connection.update():
             for vehicle in connection.vehicles:
                 print(vehicle)
