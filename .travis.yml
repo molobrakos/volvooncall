@@ -2,7 +2,6 @@ language: python
 matrix:
   include:
     - python: "3.5.3"
-      env: TOXENV=lint
       env: TOXENV=py35
     - python: "3.6"
       env: TOXENV=py36
@@ -11,5 +10,6 @@ matrix:
       dist: xenial
     - python: "3.6"
       env: TOXENV=lint
+      env: TOXENV=pytype
 install: pip install tox
 script: tox
