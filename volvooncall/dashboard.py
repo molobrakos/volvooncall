@@ -1,6 +1,7 @@
 #  Utilities for integration with Home Assistant (directly or via MQTT)
 
 import logging
+
 from .util import camel2slug
 
 _LOGGER = logging.getLogger(__name__)

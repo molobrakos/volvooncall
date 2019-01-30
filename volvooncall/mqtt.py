@@ -2,17 +2,19 @@
 # -*- mode: python; coding: utf-8 -*-
 
 import logging
-from time import time
 from json import dumps as dump_json
-from os.path import join, expanduser
 from os import environ as env
+from os.path import expanduser, join
+from time import time
 import string
 from platform import node as hostname
+import asyncio
+
+import certifi
+from hbmqtt.client import ClientException, ConnectException, MQTTClient
+
 from .dashboard import Lock, Position, Sensor, BinarySensor, Switch
 from .util import camel2slug, whitelisted, owntracks_encrypt
-from hbmqtt.client import MQTTClient, ConnectException, ClientException
-import asyncio
-import certifi
 
 _LOGGER = logging.getLogger(__name__)
 

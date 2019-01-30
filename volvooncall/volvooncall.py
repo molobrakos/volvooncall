@@ -9,8 +9,9 @@ from collections import OrderedDict
 from sys import argv
 from urllib.parse import urljoin
 import asyncio
-from aiohttp.hdrs import METH_GET, METH_POST
+
 from aiohttp import ClientSession, ClientTimeout, BasicAuth
+from aiohttp.hdrs import METH_GET, METH_POST
 
 from .util import (
     json_serialize,
