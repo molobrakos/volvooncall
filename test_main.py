@@ -1,6 +1,6 @@
+from asynctest import patch
 import pytest
 from volvooncall import Connection
-from asynctest import patch
 
 
 def mocked_request(method, url, rel=None, **kwargs):
