@@ -1,3 +1,5 @@
+.PHONY: default format white black lint test check clean pypireg pypi release docker-build docker-run-mqtt docker-run-mqtt-term
+
 default: check
 
 format: white
@@ -9,6 +11,7 @@ black:
 
 lint: requirements.txt setup.py
 	tox -e lint
+	tox -e pytype
 
 test: requirements.txt setup.py
 	tox
@@ -21,12 +24,7 @@ clean:
 	rm -rf *.egg-info
 	rm -rf __pycache__
 	rm -f pip-selfcheck.json
-
-pypitestreg:
-	python setup.py register -r pypitest
-
-pypitest:
-	python setup.py sdist upload -r pypitest
+	rm -rf pytype_output
 
 pypireg:
 	python setup.py register -r pypi
