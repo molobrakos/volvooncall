@@ -360,6 +360,17 @@ class Position(Instrument):
             state.get("heading", None),
         )
 
+    @property
+    def str_state(self):
+        state = super().state or {}
+        return (
+            state.get("latitude", "?"),
+            state.get("longitude", "?"),
+            state.get("timestamp", None).isoformat(),
+            state.get("speed", None),
+            state.get("heading", None),
+        )
+
 
 #  FIXME: Maybe make this list configurable as external yaml
 def create_instruments():
