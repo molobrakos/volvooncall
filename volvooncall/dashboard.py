@@ -387,6 +387,7 @@ def create_instruments():
         Sensor(
             attr="distanceToEmpty", name="Range", icon="mdi:ruler", unit="km"
         ),
+        Sensor(attr="averageSpeed", name="Average speed", icon="mdi:ruler", unit="km/h"),
         Sensor(
             attr="hvBattery.distanceToHVBatteryEmpty",
             name="Battery range",
@@ -413,6 +414,7 @@ def create_instruments():
         ),
         BinarySensor(attr="is_locked", name="Door lock", device_class="lock"),
         BinarySensor(attr="doors.hoodOpen", name="Hood", device_class="door"),
+        BinarySensor( attr="doors.tailgateOpen", name="Tailgate", device_class="door", ),
         BinarySensor(
             attr="doors.frontLeftDoorOpen",
             name="Front left door",
