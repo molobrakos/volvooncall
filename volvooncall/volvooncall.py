@@ -9,18 +9,19 @@ from collections import OrderedDict
 from sys import argv
 from urllib.parse import urljoin
 import asyncio
-from aiohttp.hdrs import METH_GET, METH_POST
+
 from aiohttp import ClientSession, ClientTimeout, BasicAuth
+from aiohttp.hdrs import METH_GET, METH_POST
 
 from .util import (
     json_serialize,
     is_valid_path,
     find_path,
     json_loads,
-    read_credentials,
+    read_config,
 )
 
-__version__ = "0.8.7"
+__version__ = "0.8.9"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -350,10 +351,10 @@ class Vehicle(object):
         """Return trips."""
         return self.attrs.get("trips")
 
-    def honk_and_blink(self):
+    async def honk_and_blink(self):
         """Honk and blink."""
         if self.is_honk_and_blink_supported:
-            self.call("honkAndBlink")
+            await self.call("honkAndBlink")
 
     async def lock(self):
         """Lock."""
@@ -440,7 +441,7 @@ async def main():
         logging.basicConfig(level=logging.ERROR)
 
     async with ClientSession() as session:
-        connection = Connection(session, **read_credentials())
+        connection = Connection(session, **read_config())
         if await connection.update():
             for vehicle in connection.vehicles:
                 print(vehicle)

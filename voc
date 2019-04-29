@@ -49,11 +49,7 @@ import ssl
 import certifi
 from aiohttp import ClientSession, TCPConnector
 from volvooncall import __version__, Connection
-from volvooncall.util import (
-    read_credentials,
-    json_serialize,
-    owntracks_encrypt,
-)
+from volvooncall.util import read_config, json_serialize, owntracks_encrypt
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -121,39 +117,36 @@ def print_vehicle(vehicle, geolocate=False):
 async def main(args):
     """Command line interface."""
 
-    credentials = read_credentials()
+    config = read_config()
 
     if args["-u"] and args["-p"]:
-        credentials.update(username=args["-u"], password=args["-p"])
+        config.update(username=args["-u"], password=args["-p"])
     if args["-r"]:
-        credentials.update(region=args["-r"])
+        config.update(region=args["-r"])
     if args["-s"]:
-        credentials.update(service_url=args["-s"])
+        config.update(service_url=args["-s"])
     if args["-I"]:
-        credentials.update(interval=args["-I"])
+        config.update(interval=args["-I"])
     if args["--owntracks_key"]:
-        credentials.update(owntracks_key=args["--owntracks_key"])
-    if (
-        args["--scandinavian_miles"]
-        or "--scandinavian_miles" not in credentials
-    ):
-        credentials.update(scandinavian_miles=args["--scandinavian_miles"])
-    if args["--immutable"] or "--immutable" not in credentials:
-        credentials.update(immutable=args["--immutable"])
+        config.update(owntracks_key=args["--owntracks_key"])
+    if args["--scandinavian_miles"] or "--scandinavian_miles" not in config:
+        config.update(scandinavian_miles=args["--scandinavian_miles"])
+    if args["--immutable"] or "--immutable" not in config:
+        config.update(mutable=not args["--immutable"])
 
     async with ClientSession(
         connector=TCPConnector(ssl=SSL_CONTEXT)
     ) as session:
 
         try:
-            connection = Connection(session, **credentials)
+            connection = Connection(session, **config)
         except TypeError as error:
             exit("Missing configuration: %s" % error)
 
         if args["mqtt"]:
             from volvooncall import mqtt
 
-            return await mqtt.run(connection, credentials)
+            return await mqtt.run(connection, config)
 
         journal = args["trips"] or args["dashboard"] or args["mqtt"]
         res = await connection.update(journal=journal)
@@ -222,7 +215,7 @@ async def main(args):
                 indent=4,
                 default=json_serialize,
             )
-            key = credentials.get("owntracks_key")
+            key = config.get("owntracks_key")
             if key:
                 msg = to_json(
                     dict(_type="encrypted", data=owntracks_encrypt(msg, key))
@@ -245,7 +238,7 @@ async def main(args):
         elif args["honk_and_blink"]:
             await vehicle.honk_and_blink()
         elif args["dashboard"]:
-            dashboard = vehicle.dashboard(**credentials)
+            dashboard = vehicle.dashboard(**config)
             for instrument in dashboard.instruments:
                 print("%-30s: %s" % (instrument, instrument.str_state))
         elif args["call"]:

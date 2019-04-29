@@ -2,17 +2,19 @@
 # -*- mode: python; coding: utf-8 -*-
 
 import logging
-from time import time
 from json import dumps as dump_json
-from os.path import join, expanduser
 from os import environ as env
+from os.path import expanduser, join
+from time import time
 import string
 from platform import node as hostname
+import asyncio
+
+import certifi
+from hbmqtt.client import ClientException, ConnectException, MQTTClient
+
 from .dashboard import Lock, Position, Sensor, BinarySensor, Switch
 from .util import camel2slug, whitelisted, owntracks_encrypt
-from hbmqtt.client import MQTTClient, ConnectException, ClientException
-import asyncio
-import certifi
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +70,7 @@ def make_topic(*levels):
 
 
 def read_mqtt_config():
-    """Read credentials from ~/.config/mosquitto_pub."""
+    """Read config from ~/.config/mosquitto_pub."""
     fname = join(
         env.get("XDG_CONFIG_HOME", join(expanduser("~"), ".config")),
         "mosquitto_pub",
@@ -98,6 +100,9 @@ class Entity:
         self.client = client
         self.instrument = instrument
         self.config = config
+
+    def __repr__(self):
+        return self.instrument.name
 
     @classmethod
     def route_message(cls, topic, payload):
@@ -187,7 +192,12 @@ class Entity:
 
     @property
     def topic(self):
-        return make_topic(TOPIC_PREFIX, self.vehicle.unique_id, self.object_id)
+        return make_topic(
+            TOPIC_PREFIX,
+            self.vehicle.unique_id,
+            self.instrument.component,
+            self.object_id,
+        )
 
     def make_topic(self, *levels):
         return make_topic(self.topic, *levels)
@@ -372,8 +382,6 @@ async def run(voc, config):
     logging.getLogger("hbmqtt.client.plugins.packet_logger_plugin").setLevel(
         logging.WARNING
     )
-
-    # FIXME: Allow MQTT credentials in voc.conf
 
     client_id = "voc_{hostname}_{time}".format(
         hostname=hostname(), time=time()

@@ -11,3 +11,4 @@ include
 lib
 pip-selfcheck.json
 .pytest_cache
+pytype_output

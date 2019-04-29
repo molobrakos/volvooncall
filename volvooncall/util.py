@@ -12,8 +12,8 @@ import re
 _LOGGER = logging.getLogger(__name__)
 
 
-def read_credentials():
-    """Read credentials from file."""
+def read_config():
+    """Read config from file."""
     for directory, filename in product(
         [
             dirname(argv[0]),

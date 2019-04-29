@@ -1,6 +1,7 @@
 #  Utilities for integration with Home Assistant (directly or via MQTT)
 
 import logging
+
 from .util import camel2slug
 
 _LOGGER = logging.getLogger(__name__)
@@ -28,11 +29,11 @@ class Instrument:
         return camel2slug(self.attr.replace(".", "_"))
 
     def setup(self, vehicle, mutable=True, **config):
-        if not mutable and self.is_mutable:
-            _LOGGER.info("Skipping %s because mutable", self.attr)
-            return False
-
         self.vehicle = vehicle
+
+        if not mutable and self.is_mutable:
+            _LOGGER.info("Skipping %s because mutable", self)
+            return False
 
         if not self.is_supported:
             _LOGGER.debug(
@@ -360,6 +361,18 @@ class Position(Instrument):
             state.get("heading", None),
         )
 
+    @property
+    def str_state(self):
+        state = super().state or {}
+        ts = state.get("timestamp")
+        return (
+            state.get("latitude", "?"),
+            state.get("longitude", "?"),
+            str(ts.astimezone(tz=None)) if ts else None,
+            state.get("speed", None),
+            state.get("heading", None),
+        )
+
 
 #  FIXME: Maybe make this list configurable as external yaml
 def create_instruments():
@@ -387,6 +400,12 @@ def create_instruments():
             attr="distanceToEmpty", name="Range", icon="mdi:ruler", unit="km"
         ),
         Sensor(
+            attr="averageSpeed",
+            name="Average speed",
+            icon="mdi:ruler",
+            unit="km/h",
+        ),
+        Sensor(
             attr="hvBattery.distanceToHVBatteryEmpty",
             name="Battery range",
             icon="mdi:ruler",
@@ -410,7 +429,11 @@ def create_instruments():
         BinarySensor(
             attr="is_engine_running", name="Engine", device_class="power"
         ),
+        BinarySensor(attr="is_locked", name="Door lock", device_class="lock"),
         BinarySensor(attr="doors.hoodOpen", name="Hood", device_class="door"),
+        BinarySensor(
+            attr="doors.tailgateOpen", name="Tailgate", device_class="door"
+        ),
         BinarySensor(
             attr="doors.frontLeftDoorOpen",
             name="Front left door",
