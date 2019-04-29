@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name="volvooncall",
-    version="0.8.9",
+    version="0.8.10",
     description="Communicate with VOC",
     url="https://github.com/molobrakos/volvooncall",
     license="",
