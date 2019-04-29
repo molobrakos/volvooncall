@@ -83,4 +83,6 @@ username: <username>
 password: <password>
 ```
 
+# credits
 
+https://web.archive.org/web/20180817103553/https://paulpeelen.com/2013/02/08/volvo-on-call-voc-api/ and a lot of random contributors
