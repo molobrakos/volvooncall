@@ -268,7 +268,7 @@ class Vehicle(object):
         try:
             res = await self.post(method, **data)
 
-            if "service" and "status" not in res:
+            if "service" not in res or "status" not in res:
                 _LOGGER.warning("Failed to execute: %s", res["status"])
                 return
 
@@ -281,8 +281,9 @@ class Vehicle(object):
             service_url = res["service"]
             res = await self.get(service_url)
 
-            if "service" and "status" not in res:
-                _LOGGER.warning("Message not delivered: %s", res["status"])
+            if "status" not in res:
+                _LOGGER.warning("Message not delivered")
+                return
 
             # if still Queued -> wait?
 
