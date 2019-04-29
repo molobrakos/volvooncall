@@ -21,7 +21,7 @@ from .util import (
     read_config,
 )
 
-__version__ = "0.8.11"
+__version__ = "0.8.12"
 
 _LOGGER = logging.getLogger(__name__)
 
