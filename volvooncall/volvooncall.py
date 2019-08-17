@@ -107,9 +107,10 @@ class Connection:
                 self._state = {}
                 for vehicle in user["accountVehicleRelations"]:
                     rel = await self.get(vehicle)
-                    url = rel["vehicle"] + "/"
-                    state = await self.get("attributes", rel=url)
-                    self._state.update({url: state})
+                    if(rel["status"]=="Verified"):
+                        url = rel["vehicle"] + "/"
+                        state = await self.get("attributes", rel=url)
+                        self._state.update({url: state})
             for vehicle in self.vehicles:
                 await vehicle.update(journal=journal)
             _LOGGER.debug("State: %s", self._state)
