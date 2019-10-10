@@ -11,6 +11,7 @@ Usage:
   voc [-v|-vv] [options] trips [(--pretty|--json|--csv)]
   voc [-v|-vv] [options] owntracks
   voc [-v|-vv] [options] print [<attribute>]
+  voc [-v|-vv] [options] prometheus <filename>
   voc [-v|-vv] [options] (lock | unlock)
   voc [-v|-vv] [options] heater (start | stop)
   voc [-v|-vv] [options] engine (start | stop)
@@ -48,7 +49,8 @@ from datetime import timezone
 import ssl
 import certifi
 from aiohttp import ClientSession, TCPConnector
-from volvooncall import __version__, Connection
+from volvooncall import __version__, Connection, prometheus
+from volvooncall.prometheus import PrometheusFile
 from volvooncall.util import read_config, json_serialize, owntracks_encrypt
 
 _LOGGER = logging.getLogger(__name__)
@@ -150,6 +152,19 @@ async def main(args):
 
         journal = args["trips"] or args["dashboard"] or args["mqtt"]
         res = await connection.update(journal=journal)
+
+        if args["prometheus"]:
+            with PrometheusFile(args["<filename>"]) as f:
+                f.write("# HELP voc_up Status if scraping was successful.\n")
+                f.write("# TYPE voc_up gauge\n")
+                if not res:
+                    f.write("voc_up 0\n")
+                else:
+                    f.write("voc_up 1\n")
+                    f.write("\n")
+
+                    prometheus.write_metrics(f, connection.vehicles)
+            exit()
 
         if not res:
             exit("Could not connect to the server.")
