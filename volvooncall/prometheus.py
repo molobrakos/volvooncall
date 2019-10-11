@@ -52,7 +52,6 @@ def write_metrics(file, vehicles):
 
     file.write("# HELP trip_meter trip meters (in meter) differentiated by type\n")
     file.write("# TYPE trip_meter counter\n")
-    print(vehicles)
     vehicles, vehicles_copy = itertools.tee(vehicles)
     file.write("\n".join(format_metric(vehicles_copy, 'tripMeter1', 'trip_meter', {'type': 'TM'})))
     file.write("\n")
