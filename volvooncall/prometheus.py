@@ -31,21 +31,15 @@ def format_metric(vehicles, metric, metric_alias=None, additional_labels=None):
 
         attrs_list = ['{key}="{value}"'.format(key=key, value=value) for key, value in attrs.items()]
 
-        timestamp_attr = '{}Timestamp'.format(metric)
-        timestamp_value = ''
-        if vehicle.has_attr(timestamp_attr):
-            timestamp_value = int(vehicle.get_attr(timestamp_attr).timestamp() * 1000)
-
         value = vehicle.get_attr(metric)
         if isinstance(value, bool):
             if value:
                 value = 1
             else:
                 value = 0
-        yield "{metric}{{{attrs}}} {value} {timestamp}".format(metric=metric if metric_alias is None else metric_alias,
-                                                               attrs=','.join(attrs_list),
-                                                               value=value,
-                                                               timestamp=timestamp_value)
+        yield "{metric}{{{attrs}}} {value}".format(metric=metric if metric_alias is None else metric_alias,
+                                                   attrs=','.join(attrs_list),
+                                                   value=value)
 
 
 def write_metrics(file, vehicles):
