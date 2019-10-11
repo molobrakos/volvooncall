@@ -1,3 +1,4 @@
+import itertools
 import os
 
 
@@ -9,13 +10,11 @@ class PrometheusFile:
 
     def __enter__(self):
         self.file = open(self.tempfile, mode='w+')
-        print("enter")
         return self.file.__enter__()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.__exit__(exc_type, exc_val, exc_tb)
         os.rename(self.tempfile, self.filename)
-        print("exit", exc_type, exc_val, exc_tb)
 
 
 def format_metric(vehicles, metric, metric_alias=None, additional_labels=None):
@@ -43,7 +42,6 @@ def format_metric(vehicles, metric, metric_alias=None, additional_labels=None):
                 value = 1
             else:
                 value = 0
-
         yield "{metric}{{{attrs}}} {value} {timestamp}".format(metric=metric if metric_alias is None else metric_alias,
                                                                attrs=','.join(attrs_list),
                                                                value=value,
@@ -51,47 +49,61 @@ def format_metric(vehicles, metric, metric_alias=None, additional_labels=None):
 
 
 def write_metrics(file, vehicles):
+
     file.write("# HELP odometer Vehicle main odometer in meter.\n")
     file.write("# TYPE odometer counter\n")
-    file.write("\n".join(format_metric(vehicles, 'odometer')))
-    file.write("\n")
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'odometer')))
+    file.write("\n\n")
 
     file.write("# HELP trip_meter trip meters (in meter) differentiated by type\n")
     file.write("# TYPE trip_meter counter\n")
-    file.write("\n".join(format_metric(vehicles, 'tripMeter1', 'trip_meter', {'type': 'TM'})))
+    print(vehicles)
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'tripMeter1', 'trip_meter', {'type': 'TM'})))
     file.write("\n")
-    file.write("\n".join(format_metric(vehicles, 'tripMeter2', 'trip_meter', {'type': 'TA'})))
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'tripMeter2', 'trip_meter', {'type': 'TA'})))
+    file.write("\n\n")
 
     file.write("# HELP fuel_amount tank size and current volume in liters\n")
     file.write("# TYPE fuel_amount gauge\n")
-    file.write("\n".join(format_metric(vehicles, 'fuelTankVolume', 'fuel_amount', {'type': 'capacity'})))
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'fuelTankVolume', 'fuel_amount', {'type': 'capacity'})))
     file.write("\n")
-    file.write("\n".join(format_metric(vehicles, 'fuelAmount', 'fuel_amount', {'type': 'level'})))
-    file.write("\n")
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'fuelAmount', 'fuel_amount', {'type': 'level'})))
+    file.write("\n\n")
 
     file.write("# HELP fuel_level tank level in percent\n")
     file.write("# TYPE fuel_level gauge\n")
-    file.write("\n".join(format_metric(vehicles, 'fuelAmountLevel', 'fuel_level')))
-    file.write("\n")
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'fuelAmountLevel', 'fuel_level')))
+    file.write("\n\n")
 
     file.write("# HELP car_status car status metrics\n")
     file.write("# TYPE car_status gauge\n")
-    file.write("\n".join(format_metric(vehicles, 'engineRunning', 'car_status', {'type': 'engineRunning'})))
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'engineRunning', 'car_status', {'type': 'engineRunning'})))
     file.write("\n")
-    file.write("\n".join(format_metric(vehicles, 'carLocked', 'car_status', {'type': 'carLocked'})))
-    file.write("\n")
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'carLocked', 'car_status', {'type': 'carLocked'})))
+    file.write("\n\n")
 
     file.write("# HELP distance distance values\n")
     file.write("# TYPE distance gauge\n")
-    file.write("\n".join(format_metric(vehicles, 'distanceToEmpty', 'distance', {'type': 'toEmpty'})))
-    file.write("\n")
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'distanceToEmpty', 'distance', {'type': 'toEmpty'})))
+    file.write("\n\n")
 
     file.write("# HELP consumption consumption values\n")
     file.write("# TYPE consumption gauge\n")
-    file.write("\n".join(format_metric(vehicles, 'averageFuelConsumption', 'consumption', {'type': 'fuel'})))
-    file.write("\n")
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'averageFuelConsumption', 'consumption', {'type': 'fuel'})))
+    file.write("\n\n")
 
     file.write("# HELP speed speed values\n")
     file.write("# TYPE speed gauge\n")
-    file.write("\n".join(format_metric(vehicles, 'averageSpeed', 'speed', {'type': 'average'})))
-    file.write("\n")
+    vehicles, vehicles_copy = itertools.tee(vehicles)
+    file.write("\n".join(format_metric(vehicles_copy, 'averageSpeed', 'speed', {'type': 'average'})))
+    file.write("\n\n")
