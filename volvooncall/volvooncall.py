@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Communicate with VOC server."""
-
+import json
 import logging
 from datetime import timedelta
 from json import dumps as to_json
 from collections import OrderedDict
+from os import makedirs, rename
+from os.path import join, exists
 from sys import argv
 from urllib.parse import urljoin
 import asyncio
+import itertools
+from random import randint
 
 from aiohttp import ClientSession, ClientTimeout, BasicAuth
 from aiohttp.hdrs import METH_GET, METH_POST
@@ -27,6 +31,10 @@ _LOGGER = logging.getLogger(__name__)
 
 SERVICE_URL = "https://vocapi{region}.wirelesscar.net/customerapi/rest/v3.0/"
 DEFAULT_SERVICE_URL = SERVICE_URL.format(region="")
+
+# 5 days * 24 hours * 60 minutes * 5 waypoints per minute / 1000 pages
+# => 36 pages, should be sufficent
+MAX_PAGE_COUNTER_ROUTES = 36
 
 HEADERS = {
     "X-Device-Id": "Device",
@@ -123,6 +131,89 @@ class Connection:
         self._state[url].update(await self.get("position", rel=url))
         if journal:
             self._state[url].update(await self.get("trips", rel=url))
+
+    async def export_trips(self, folder):
+        """
+        export trips/routes of all vehicles to the given folder
+
+        update(journal=true) must be called before calling this method
+        """
+        exported = 0
+        skipped = 0
+        for vehicle in self.vehicles:
+            this_exported, this_skipped = await self.export_trips_of_vehicle(vehicle, folder=folder)
+            exported += this_exported
+            skipped += this_skipped
+        return exported, skipped
+
+    async def export_trips_of_vehicle(self, vehicle, folder):
+        exported = 0
+        skipped = 0
+        out_path = join(folder, vehicle.vin)
+        makedirs(out_path, exist_ok=True)
+
+        for trip in vehicle.trips:
+            was_exported = await self.export_single_trip_to_folder(vehicle, trip, out_path)
+            if was_exported:
+                exported += 1
+            else:
+                skipped += 1
+
+        return exported, skipped
+
+    async def export_single_trip_to_folder(self, vehicle, trip, out_path):
+        trip_start_time = trip['tripDetails'][0]['startTime']
+        trip_ident = "%s_%s" % (trip_start_time.isoformat(), trip['id'])
+        trip_folder = join(out_path, trip_ident)
+
+        if exists(trip_folder):
+            _LOGGER.info("EXPORT: SKIP %s: is already exported" % trip_ident)
+            return False
+
+        # first generate into a temp folder
+        trip_folder_tmp = trip_folder + "-tmp-%x" % (randint(0, 10000))
+        makedirs(trip_folder_tmp)
+
+        trip_file = join(trip_folder_tmp, "trip.json")
+        waypoints_file = join(trip_folder_tmp, "waypoints.json")
+
+        await self.write_trip_file(trip_file, trip)
+
+        if 'routeDetails' in trip:
+            waypoints_count = await self.write_waypoints_file(vehicle, trip, waypoints_file)
+        else:
+            waypoints_count = 0
+
+        rename(trip_folder_tmp, trip_folder)
+        _LOGGER.info(("EXPORT: DONE %s: exported (%i waypoints)" % (trip_ident, waypoints_count)))
+        return True
+
+    async def write_waypoints_file(self, vehicle, trip, waypoints_file):
+        with open(waypoints_file, "w") as fh:
+            waypoints = await self._fetch_waypoints_for_trip(trip['id'], vehicle._url)
+            json.dump(waypoints, fh, indent=4, sort_keys=True, default=str)
+            return len(waypoints)
+
+    async def write_trip_file(self, trip_file, trip):
+        with open(trip_file, "w") as fh:
+            json.dump(trip, fh, indent=4, sort_keys=True, default=str)
+
+    async def _fetch_waypoints_for_trip(self, trip_id, rel_url):
+        waypoints = []
+        for page in itertools.count():
+            route_url = "trips/%i/route?page=%i&page_size=1000" % (trip_id, page)
+            route_details_page = await self.get(route_url, rel=rel_url)
+
+            this_page_waypoints = route_details_page['waypoints']
+            if len(this_page_waypoints) == 0:
+                break
+
+            if page > MAX_PAGE_COUNTER_ROUTES:
+                raise RuntimeError("Fetched more than %i pages, something is broken for %s" % (
+                    page, route_url))
+
+            waypoints.extend((this_page_waypoints))
+        return waypoints
 
     @property
     def vehicles(self):
