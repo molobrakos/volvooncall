@@ -1,3 +1,5 @@
+import asyncio
+
 from asynctest import patch
 import pytest
 from volvooncall import Connection
@@ -9,7 +11,7 @@ def mocked_request(method, url, rel=None, **kwargs):
         return {"username": "foobar", "accountVehicleRelations": ["rel/1"]}
 
     if "rel" in url:
-        return {"vehicle": "vehicle/1"}
+        return {"vehicle": "vehicle/1", "status": "Verified"}
 
     if "attributes" in url:
         return {"registrationNumber": "FOO123"}
@@ -41,7 +43,7 @@ async def get_vehicle(mock):
 @pytest.mark.asyncio
 async def test_basic():
     vehicle = await get_vehicle()
-    assert vehicle
+    assert vehicle is not None
     assert vehicle.registration_number == "FOO123"
 
 
@@ -108,3 +110,8 @@ async def test_ers_start_dashboard():
 
     # shold be on
     assert all(engine.state for engine in engine_instruments)
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(test_basic())
