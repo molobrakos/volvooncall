@@ -7,7 +7,7 @@ setup(
     version="0.8.12",
     description="Communicate with VOC",
     url="https://github.com/molobrakos/volvooncall",
-    license="",
+    license="Unlicense",
     author="Erik",
     author_email="error.errorsson@gmail.com",
     scripts=["voc"],
