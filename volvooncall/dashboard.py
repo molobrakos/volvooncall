@@ -260,6 +260,7 @@ class BatteryChargeStatus(BinarySensor):
     def state(self):
         return super(BinarySensor, self).state.endswith("_Charging")
 
+
 class PluggedInStatus(BinarySensor):
     def __init__(self):
         super().__init__(
