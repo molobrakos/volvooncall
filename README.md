@@ -9,7 +9,7 @@ Also contains an MQTT gateway for publishing information and bidirectional commu
 
 ## system requirements
 
- - At least python 3.6 or higher
+ - At least python 3.8 or higher
  
 ## how to use
 
