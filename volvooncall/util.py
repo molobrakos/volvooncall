@@ -31,7 +31,7 @@ def read_config():
                     for x in config.read().strip().splitlines()
                     if not x.startswith("#")
                 )
-        except (IOError, OSError):
+        except OSError:
             continue
     return {}
 
@@ -153,5 +153,5 @@ def whitelisted(s, whitelist=letters + digits, substitute=""):
 
     >>> whitelisted("ab/cd#ef(gh", substitute='')
     'abcdefgh'
-   """
+    """
     return "".join(c if c in whitelist else substitute for c in s)

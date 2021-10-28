@@ -4,4 +4,5 @@ docopt
 pyyaml
 certifi
 hbmqtt
+websockets<=8.1
 aiohttp
