@@ -283,8 +283,8 @@ if __name__ == "__main__":
             loop.run_until_complete(fut)
             loop.close()
 
-        asyncio.create_task = lambda coro: asyncio.get_event_loop().create_task(
-            coro
+        asyncio.create_task = (
+            lambda coro: asyncio.get_event_loop().create_task(coro)
         )
 
     try:
