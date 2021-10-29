@@ -224,7 +224,9 @@ class BinarySensor(Instrument):
         if self.device_class == "safety":
             return "Warning!" if self.state else "OK"
         if self.device_class == "plug":
-            return "Charging" if self.state else "Plug removed"
+            return "Plugged in" if self.state else "Plug removed"
+        if self.device_class == "battery_charging":
+            return "Charging" if self.state else "Not charging"
         if self.state is None:
             _LOGGER.error("Can not encode state %s:%s", self.attr, self.state)
             return "?"
@@ -251,12 +253,25 @@ class BatteryChargeStatus(BinarySensor):
         super().__init__(
             "hvBattery.hvBatteryChargeStatusDerived",
             "Battery charging",
+            "battery_charging",
+        )
+
+    @property
+    def state(self):
+        return super(BinarySensor, self).state.endswith("_Charging")
+
+
+class PluggedInStatus(BinarySensor):
+    def __init__(self):
+        super().__init__(
+            "hvBattery.hvBatteryChargeStatusDerived",
+            "Plug status",
             "plug",
         )
 
     @property
     def state(self):
-        return super(BinarySensor, self).state == "CablePluggedInCar_Charging"
+        return super(BinarySensor, self).state.startswith("CablePluggedInCar_")
 
 
 class Lock(Instrument):
@@ -424,6 +439,7 @@ def create_instruments():
             unit="minutes",
         ),
         BatteryChargeStatus(),
+        PluggedInStatus(),
         EngineStart(),
         JournalLastTrip(),
         BinarySensor(
