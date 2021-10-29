@@ -1,6 +1,6 @@
 # Volvo On Call
 
-[![Build Status](https://travis-ci.org/molobrakos/volvooncall.svg?branch=master)](https://travis-ci.org/molobrakos/volvooncall)
+[![CI](https://github.com/molobrakos/volvooncall/actions/workflows/ci.yml/badge.svg)](https://github.com/molobrakos/volvooncall/actions/workflows/ci.yml)
 
 Retrieve statistics about your Volvo from the Volvo On Call (VOC) online service
 No licence, public domain, no guarantees, feel free to use for anything. Please contribute improvements/bugfixes etc.
