@@ -214,7 +214,12 @@ class JournalLastTrip(Sensor):
 
 class BinarySensor(Instrument):
     def __init__(self, attr, name, device_class, slug_override=None):
-        super().__init__(component="binary_sensor", attr=attr, name=name, slug_override=slug_override)
+        super().__init__(
+            component="binary_sensor",
+            attr=attr,
+            name=name,
+            slug_override=slug_override,
+        )
         self.device_class = device_class
 
     @property
@@ -271,7 +276,7 @@ class PluggedInStatus(BinarySensor):
             "hvBattery.hvBatteryChargeStatusDerived",
             "Plug status",
             "plug",
-            slug_override="plugged_in_status"
+            slug_override="plugged_in_status",
         )
 
     @property
