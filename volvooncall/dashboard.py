@@ -27,7 +27,10 @@ class Instrument:
 
     @property
     def slug_attr(self):
-        return self.slug_override if self.slug_override is not None else camel2slug(self.attr.replace(".", "_"))
+        if self.slug_override is not None:
+            return self.slug_override
+        else:
+            return camel2slug(self.attr.replace(".", "_"))
 
     def setup(self, vehicle, mutable=True, **config):
         self.vehicle = vehicle
@@ -255,7 +258,6 @@ class BatteryChargeStatus(BinarySensor):
             "hvBattery.hvBatteryChargeStatusDerived",
             "Battery charging",
             "battery_charging",
-            slug_override="battery_charging"
         )
 
     @property
