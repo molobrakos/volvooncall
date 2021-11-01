@@ -255,6 +255,7 @@ class BatteryChargeStatus(BinarySensor):
             "hvBattery.hvBatteryChargeStatusDerived",
             "Battery charging",
             "battery_charging",
+            slug_override="battery_charging"
         )
 
     @property
