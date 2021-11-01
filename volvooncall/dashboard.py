@@ -11,12 +11,13 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class Instrument:
-    def __init__(self, component, attr, name, icon=None):
+    def __init__(self, component, attr, name, icon=None, slug_override=None):
         self.attr = attr
         self.component = component
         self.name = name
         self.vehicle = None
         self.icon = icon
+        self.slug_override = slug_override
 
     def __repr__(self):
         return self.full_name
@@ -26,7 +27,10 @@ class Instrument:
 
     @property
     def slug_attr(self):
-        return camel2slug(self.attr.replace(".", "_"))
+        if self.slug_override is not None:
+            return self.slug_override
+        else:
+            return camel2slug(self.attr.replace(".", "_"))
 
     def setup(self, vehicle, mutable=True, **config):
         self.vehicle = vehicle
@@ -209,8 +213,13 @@ class JournalLastTrip(Sensor):
 
 
 class BinarySensor(Instrument):
-    def __init__(self, attr, name, device_class):
-        super().__init__(component="binary_sensor", attr=attr, name=name)
+    def __init__(self, attr, name, device_class, slug_override=None):
+        super().__init__(
+            component="binary_sensor",
+            attr=attr,
+            name=name,
+            slug_override=slug_override,
+        )
         self.device_class = device_class
 
     @property
@@ -267,6 +276,7 @@ class PluggedInStatus(BinarySensor):
             "hvBattery.hvBatteryChargeStatusDerived",
             "Plug status",
             "plug",
+            slug_override="plugged_in_status",
         )
 
     @property
