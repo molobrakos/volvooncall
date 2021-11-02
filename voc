@@ -17,25 +17,33 @@ Usage:
   voc [-v|-vv] [options] honk_and_blink
   voc [-v|-vv] [options] call <method>
   voc [-v|-vv] [options] mqtt
+  voc [-v|-vv] [options] influxdb [<influxdb_endpoint>]
   voc [-v|-vv] [options] dashboard
 
 Options:
-  -u <username>         VOC username
-  -p <password>         VOC password
-  -r <region>           VOC region (na, cn, etc.)
-  -s <url>              VOC service URL
-  -i <vin>              Vehicle VIN or registration number
-  -g                    Geolocate position
-  --owntracks_key=<key> Owntracks encryption password
-  -I <interval>         Polling interval (seconds) [default: 300]
-  -h --help             Show this message
-  --immutable           Read only mode
-  -v,-vv                Increase verbosity
-  -d                    More debugging
-  --scandinavian_miles  Report using Scandinavian miles instead of km ISO unit
-  --utc                 Print timestamps in UTC (+00:00) instead of local time
-  --version             Show version
+  -u <username>                  VOC username
+  -p <password>                  VOC password
+  -r <region>                    VOC region (na, cn, etc.)
+  -s <url>                       VOC service URL
+  -i <vin>                       Vehicle VIN or registration number
+  -g                             Geolocate position
+  --owntracks_key=<key>          Owntracks encryption password
+  -I <interval>                  Polling interval (seconds) [default: 300]
+  --influxdb-port=<port>         InfluxDB port [default: 8086]
+  --influxdb-username=<user>     InfluxDB user name [default: ]
+  --influxdb-password=<password> InfluxDB password or use INFLUXDB_PASSWORD environment variable [default: ]
+  --influxdb-database=<database> InfluxDB database [default: default]
+  --influxdb-ssl                 use SSL when connecting to InfluxDB [default: True]
+  --influxdb-insecure            disable SSL validation [default: False]
+  -h --help                      Show this message
+  --immutable                    Read only mode
+  -v,-vv                         Increase verbosity
+  -d                             More debugging
+  --scandinavian_miles           Report using Scandinavian miles instead of km ISO unit
+  --utc                          Print timestamps in UTC (+00:00) instead of local time
+  --version                      Show version
 """
+import os
 
 import docopt
 import logging
@@ -44,12 +52,18 @@ from time import time
 from json import dumps as to_json
 from sys import stderr
 from collections import OrderedDict
-from datetime import timezone
+from datetime import timezone, datetime
 import ssl
 import certifi
 from aiohttp import ClientSession, TCPConnector
-from volvooncall import __version__, Connection
+from volvooncall import __version__, Connection, influxdb
 from volvooncall.util import read_config, json_serialize, owntracks_encrypt
+
+influxdb_available = True
+try:
+    from influxdb import InfluxDBClient
+except ImportError:
+    influxdb_available = False
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -151,6 +165,49 @@ async def main(args):
         journal = args["trips"] or args["dashboard"] or args["mqtt"]
         res = await connection.update(journal=journal)
 
+        if args["influxdb"]:
+            if not influxdb_available:
+                exit("python-influxdb is not installed")
+            influxdb_endpoint = args["<influxdb_endpoint>"]
+            if influxdb_endpoint is None:
+                exit("influxdb endpoint is required")
+
+            influxdb_port = args["--influxdb-port"]
+            influxdb_username = args["--influxdb-username"]
+            influxdb_password = args["--influxdb-password"] if args["--influxdb-password"] is not None else os.getenv("INFLUXDB_PASSWORD", "")
+            influxdb_database = args["--influxdb-database"]
+            influxdb_use_ssl = args["--influxdb-ssl"]
+            influxdb_verify_ssl = not args["--influxdb-insecure"]
+
+            client = InfluxDBClient(influxdb_endpoint, influxdb_port, influxdb_username, influxdb_password,
+                                    influxdb_database, ssl=influxdb_use_ssl, verify_ssl=influxdb_verify_ssl)
+
+            payload = [{
+                "measurement": "voc_up",
+                "time": datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ'),
+                "fields": {
+                    "value": 1 if res else 0
+                }
+            }]
+            if not res:
+                exit("Could not connect to the server.")
+
+            for vehicle in connection.vehicles:
+                payload.append(influxdb.format_metric(vehicle, 'odometer'))
+                payload.append(influxdb.format_metric(vehicle, 'tripMeter1', "trip_meter", "TM"))
+                payload.append(influxdb.format_metric(vehicle, 'tripMeter2', "trip_meter", "TA"))
+                payload.append(influxdb.format_metric(vehicle, 'fuelTankVolume', "fuel_amount", "capacity"))
+                payload.append(influxdb.format_metric(vehicle, 'fuelAmount', "fuel_amount", "level"))
+                payload.append(influxdb.format_metric(vehicle, 'fuelAmountLevel', "fuel_level"))
+                payload.append(influxdb.format_metric(vehicle, 'engineRunning', "car_status", "engineRunning"))
+                payload.append(influxdb.format_metric(vehicle, 'carLocked', "car_status", "carLocked"))
+                payload.append(influxdb.format_metric(vehicle, 'distanceToEmpty', "distance", "toEmpty"))
+                payload.append(influxdb.format_metric(vehicle, 'averageFuelConsumption', "consumption", "fuel"))
+                payload.append(influxdb.format_metric(vehicle, 'averageSpeed', "speed", "average"))
+
+            client.write_points(payload)
+
+            exit()
         if not res:
             exit("Could not connect to the server.")
 

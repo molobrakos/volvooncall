@@ -13,5 +13,5 @@ setup(
     scripts=["voc"],
     packages=["volvooncall"],
     install_requires=list(open("requirements.txt").read().strip().split("\n")),
-    extras_require={"console": ["docopt"]},
+    extras_require={"console": ["docopt"], "influxdb": ["influxdb"]},
 )
