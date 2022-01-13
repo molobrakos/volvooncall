@@ -3,6 +3,6 @@ geopy>=1.14.0
 docopt
 pyyaml
 certifi
-hbmqtt
-websockets<=8.1
+amqtt
+websockets<10.0
 aiohttp

@@ -11,7 +11,7 @@ from platform import node as hostname
 import asyncio
 
 import certifi
-from hbmqtt.client import ClientException, ConnectException, MQTTClient
+from amqtt.client import ClientException, ConnectException, MQTTClient
 
 from .dashboard import Lock, Position, Sensor, BinarySensor, Switch
 from .util import camel2slug, whitelisted, owntracks_encrypt
@@ -288,7 +288,7 @@ class Entity:
 
     async def subscribe_to(self, topic):
         _LOGGER.debug("Subscribing to %s", topic)
-        from hbmqtt.mqtt.constants import QOS_1
+        from amqtt.mqtt.constants import QOS_1
 
         await self.client.subscribe([(topic, QOS_1)])
         _LOGGER.debug("Subscribed to %s", topic)
@@ -379,7 +379,7 @@ class Entity:
 
 async def run(voc, config):
 
-    logging.getLogger("hbmqtt.client.plugins.packet_logger_plugin").setLevel(
+    logging.getLogger("amqtt.client.plugins.packet_logger_plugin").setLevel(
         logging.WARNING
     )
 
