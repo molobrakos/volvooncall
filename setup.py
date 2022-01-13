@@ -14,4 +14,5 @@ setup(
     packages=["volvooncall"],
     install_requires=list(open("requirements.txt").read().strip().split("\n")),
     extras_require={"console": ["docopt"]},
+    python_requires=">=3.8"
 )
