@@ -13,6 +13,9 @@ setup(
     scripts=["voc"],
     packages=["volvooncall"],
     install_requires=list(open("requirements.txt").read().strip().split("\n")),
-    extras_require={"console": ["docopt"]},
+    extras_require={
+        "console": ["certifi", "docopt", "geopy>=1.14.0"],
+        "mqtt": ["amqtt>=0.10.0,<0.11.0", "certifi", "websockets>=9.0"]
+    },
     python_requires=">=3.8"
 )

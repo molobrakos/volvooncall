@@ -10,6 +10,27 @@ Also contains an MQTT gateway for publishing information and bidirectional commu
 ## system requirements
 
  - At least python 3.8 or higher
+
+## dependencies
+
+To use just the API in `volvooncall.py` or the Home Assistant bindings in `dashboard.py`, simply install the package as
+usual with pip:
+
+```sh
+pip install volvooncall
+```
+
+To use console features (i.e. the `voc` command documented below):
+
+```sh
+pip install volvooncall[console]
+```
+
+To use MQTT features:
+
+```sh
+pip install volvooncall[mqtt]
+```
  
 ## how to use
 
