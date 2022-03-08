@@ -15,7 +15,7 @@ setup(
     install_requires=list(open("requirements.txt").read().strip().split("\n")),
     extras_require={
         "console": ["certifi", "docopt", "geopy>=1.14.0"],
-        "mqtt": ["amqtt>=0.10.0,<0.11.0", "certifi"]
+        "mqtt": list(open("requirements_mqtt.txt").read().strip().split("\n"))
     },
     python_requires=">=3.8"
 )
