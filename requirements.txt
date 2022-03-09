@@ -1,2 +1,3 @@
-setuptools
-aiohttp
+aiohttp<4.0
+amqtt>=0.10.0,<0.11.0
+certifi
