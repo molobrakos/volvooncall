@@ -95,9 +95,16 @@ class Sensor(Instrument):
         super().__init__(component="sensor", attr=attr, name=name, icon=icon)
         self.unit = unit
 
-    def configurate(self, scandinavian_miles=False, **config):
+    def configurate(self, scandinavian_miles=False, usa_units=False, **config):
         if self.unit and scandinavian_miles and "km" in self.unit:
             self.unit = "mil"
+        if self.unit and usa_units and "km" in self.unit:
+            if "km/h" in self.unit:
+                self.unit = "mph"
+            else:
+                self.unit = "mi"
+        if self.unit and usa_units and "L" in self.unit:
+            self.unit = "gal"
 
     @property
     def is_mutable(self):
@@ -115,6 +122,12 @@ class Sensor(Instrument):
         val = super().state
         if val and "mil" in self.unit:
             return val / 10
+        elif val and "mi" in self.unit:
+            return round(val * 0.621371, 1)
+        elif val and "gal" in self.unit:
+            return round(val * 0.264172, 1)
+        elif val and "mph" in self.unit:
+            return round(val * 0.621371, 1)
         else:
             return val
 
@@ -128,15 +141,19 @@ class FuelConsumption(Sensor):
             unit="L/100 km",
         )
 
-    def configurate(self, scandinavian_miles=False, **config):
+    def configurate(self, scandinavian_miles=False, usa_units=False, **config):
         if scandinavian_miles:
             self.unit = "L/mil"
+        elif usa_units:
+            self.unit = "mpg"
 
     @property
     def state(self):
         val = super().state
         decimals = 2 if "mil" in self.unit else 1
         if val:
+            if "mpg" in self.unit:
+                return round(235.215 / (val / 10), decimals)
             return round(val / 10, decimals)
 
 
