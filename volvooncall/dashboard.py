@@ -96,15 +96,16 @@ class Sensor(Instrument):
         self.unit = unit
 
     def configurate(self, scandinavian_miles=False, usa_units=False, **config):
-        if self.unit and scandinavian_miles and "km" in self.unit:
-            self.unit = "mil"
-        if self.unit and usa_units and "km" in self.unit:
+        if self.unit and scandinavian_miles:
+            if "km" in self.unit:
+                self.unit = "mil"
+        elif self.unit and usa_units:
             if "km/h" in self.unit:
                 self.unit = "mph"
-            else:
+            elif "km" in self.unit:
                 self.unit = "mi"
-        if self.unit and usa_units and "L" in self.unit:
-            self.unit = "gal"
+            elif "L" in self.unit:
+                self.unit = "gal"
 
     @property
     def is_mutable(self):
