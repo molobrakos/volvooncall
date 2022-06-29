@@ -64,6 +64,7 @@ Options:
   -h --help             Show this message
   -v,-vv                Increase verbosity
   --scandinavian_miles  Report using Scandinavian miles instead of km ISO unit
+  --usa_units           Report using USA units (miles, mph, mpg, gal, etc.)
   --version             Show version
 ```
 
