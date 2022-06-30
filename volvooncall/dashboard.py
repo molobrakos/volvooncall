@@ -419,9 +419,7 @@ class Position(Instrument):
 
 #  FIXME: Maybe make this list configurable as external yaml
 def create_instruments(usa_units=False, **config):
-    tyre = "tyre"
-    if usa_units:
-        tyre = "tire"
+    tyre = "tire" if usa_units else "tyre"
 
     return [
         Position(),
