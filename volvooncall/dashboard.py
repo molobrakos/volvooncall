@@ -418,7 +418,11 @@ class Position(Instrument):
 
 
 #  FIXME: Maybe make this list configurable as external yaml
-def create_instruments():
+def create_instruments(usa_units=False, **config):
+    tyre = "tyre"
+    if usa_units:
+        tyre = "tire"
+
     return [
         Position(),
         Lock(),
@@ -520,22 +524,22 @@ def create_instruments():
         ),
         BinarySensor(
             attr="tyrePressure.frontRightTyrePressure",
-            name="Front right tyre",
+            name=f"Front right {tyre}",
             device_class="safety",
         ),
         BinarySensor(
             attr="tyrePressure.frontLeftTyrePressure",
-            name="Front left tyre",
+            name=f"Front left {tyre}",
             device_class="safety",
         ),
         BinarySensor(
             attr="tyrePressure.rearRightTyrePressure",
-            name="Rear right tyre",
+            name=f"Rear right {tyre}",
             device_class="safety",
         ),
         BinarySensor(
             attr="tyrePressure.rearLeftTyrePressure",
-            name="Rear left tyre",
+            name=f"Rear left {tyre}",
             device_class="safety",
         ),
         BinarySensor(
@@ -560,6 +564,6 @@ class Dashboard:
         _LOGGER.debug("Setting up dashboard with config :%s", config)
         self.instruments = [
             instrument
-            for instrument in create_instruments()
+            for instrument in create_instruments(config)
             if instrument.setup(vehicle, **config)
         ]
