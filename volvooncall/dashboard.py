@@ -95,9 +95,17 @@ class Sensor(Instrument):
         super().__init__(component="sensor", attr=attr, name=name, icon=icon)
         self.unit = unit
 
-    def configurate(self, scandinavian_miles=False, **config):
-        if self.unit and scandinavian_miles and "km" in self.unit:
-            self.unit = "mil"
+    def configurate(self, scandinavian_miles=False, usa_units=False, **config):
+        if self.unit and scandinavian_miles:
+            if "km" in self.unit:
+                self.unit = "mil"
+        elif self.unit and usa_units:
+            if "km/h" in self.unit:
+                self.unit = "mph"
+            elif "km" in self.unit:
+                self.unit = "mi"
+            elif "L" in self.unit:
+                self.unit = "gal"
 
     @property
     def is_mutable(self):
@@ -115,6 +123,12 @@ class Sensor(Instrument):
         val = super().state
         if val and "mil" in self.unit:
             return val / 10
+        elif val and "mi" in self.unit:
+            return round(val * 0.621371, 1)
+        elif val and "gal" in self.unit:
+            return round(val * 0.264172, 1)
+        elif val and "mph" in self.unit:
+            return round(val * 0.621371, 1)
         else:
             return val
 
@@ -128,15 +142,19 @@ class FuelConsumption(Sensor):
             unit="L/100 km",
         )
 
-    def configurate(self, scandinavian_miles=False, **config):
+    def configurate(self, scandinavian_miles=False, usa_units=False, **config):
         if scandinavian_miles:
             self.unit = "L/mil"
+        elif usa_units:
+            self.unit = "mpg"
 
     @property
     def state(self):
         val = super().state
         decimals = 2 if "mil" in self.unit else 1
         if val:
+            if "mpg" in self.unit:
+                return round(235.215 / (val / 10), decimals)
             return round(val / 10, decimals)
 
 
@@ -400,7 +418,9 @@ class Position(Instrument):
 
 
 #  FIXME: Maybe make this list configurable as external yaml
-def create_instruments():
+def create_instruments(usa_units=False, **config):
+    tyre = "tire" if usa_units else "tyre"
+
     return [
         Position(),
         Lock(),
@@ -502,22 +522,22 @@ def create_instruments():
         ),
         BinarySensor(
             attr="tyrePressure.frontRightTyrePressure",
-            name="Front right tyre",
+            name=f"Front right {tyre}",
             device_class="safety",
         ),
         BinarySensor(
             attr="tyrePressure.frontLeftTyrePressure",
-            name="Front left tyre",
+            name=f"Front left {tyre}",
             device_class="safety",
         ),
         BinarySensor(
             attr="tyrePressure.rearRightTyrePressure",
-            name="Rear right tyre",
+            name=f"Rear right {tyre}",
             device_class="safety",
         ),
         BinarySensor(
             attr="tyrePressure.rearLeftTyrePressure",
-            name="Rear left tyre",
+            name=f"Rear left {tyre}",
             device_class="safety",
         ),
         BinarySensor(
@@ -542,6 +562,6 @@ class Dashboard:
         _LOGGER.debug("Setting up dashboard with config :%s", config)
         self.instruments = [
             instrument
-            for instrument in create_instruments()
+            for instrument in create_instruments(config)
             if instrument.setup(vehicle, **config)
         ]

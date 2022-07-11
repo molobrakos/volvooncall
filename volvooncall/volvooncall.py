@@ -79,7 +79,9 @@ class Connection:
                 return res
         except Exception as error:
             _LOGGER.warning(
-                "Failure when communicating with the server: %s", error, exc_info=True
+                "Failure when communicating with the server: %s",
+                error,
+                exc_info=True,
             )
             raise
 

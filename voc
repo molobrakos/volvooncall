@@ -33,6 +33,7 @@ Options:
   -v,-vv                Increase verbosity
   -d                    More debugging
   --scandinavian_miles  Report using Scandinavian miles instead of km ISO unit
+  --usa_units           Report using USA units (miles, mph, mpg, gal, etc.)
   --utc                 Print timestamps in UTC (+00:00) instead of local time
   --version             Show version
 """
@@ -131,6 +132,8 @@ async def main(args):
         config.update(owntracks_key=args["--owntracks_key"])
     if args["--scandinavian_miles"] or "--scandinavian_miles" not in config:
         config.update(scandinavian_miles=args["--scandinavian_miles"])
+    if args["--usa_units"] or "--usa_units" not in config:
+        config.update(usa_units=args["--usa_units"])
     if args["--immutable"] or "--immutable" not in config:
         config.update(mutable=not args["--immutable"])
 
