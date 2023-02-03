@@ -93,7 +93,6 @@ def read_mqtt_config():
 
 
 class Entity:
-
     subscriptions = {}
 
     def __init__(self, client, instrument, config):
@@ -295,7 +294,6 @@ class Entity:
         Entity.subscriptions[topic] = self
 
     def receive_command(self, command):
-
         run = asyncio.create_task  # pylint:disable=no-member
 
         if self.is_lock:
@@ -378,7 +376,6 @@ class Entity:
 
 
 async def run(voc, config):
-
     logging.getLogger("amqtt.client.plugins.packet_logger_plugin").setLevel(
         logging.WARNING
     )
