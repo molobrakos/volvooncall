@@ -123,7 +123,7 @@ class Sensor(Instrument):
         val = super().state
         if val and "mil" in self.unit:
             return val / 10
-        elif val and "mi" in self.unit:
+        elif val and "mi" in self.unit and "min" not in self.unit:
             return round(val * 0.621371, 1)
         elif val and "gal" in self.unit:
             return round(val * 0.264172, 1)

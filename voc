@@ -140,7 +140,6 @@ async def main(args):
     async with ClientSession(
         connector=TCPConnector(ssl=SSL_CONTEXT)
     ) as session:
-
         try:
             connection = Connection(session, **config)
         except TypeError as error:

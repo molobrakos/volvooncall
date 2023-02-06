@@ -59,7 +59,8 @@ def json_loads(s):
 
 
 def find_path(src, path):
-    """Simple navigation of a hierarchical dict structure using XPATH-like syntax.
+    """Simple navigation of a hierarchical dict structure using
+       XPATH-like syntax.
 
     >>> find_path(dict(a=1), 'a')
     1
