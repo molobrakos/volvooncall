@@ -1,6 +1,6 @@
 import asyncio
 
-from asynctest import patch
+from mock import patch
 import pytest
 from volvooncall import Connection
 
