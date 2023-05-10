@@ -175,8 +175,9 @@ class Odometer(Sensor):
 class JournalLastTrip(Sensor):
     def __init__(self):
         super().__init__(
-            attr="trips", name="Last trip", unit="", icon="mdi:book-open"
+            attr="trips", name="Last trip", unit=None, icon="mdi:book-open"
         )
+        self.device_class = "date"
 
     @property
     def is_supported(self):

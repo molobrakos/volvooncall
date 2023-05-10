@@ -9,7 +9,9 @@ Also contains an MQTT gateway for publishing information and bidirectional commu
 
 ## system requirements
 
- - At least python 3.8 or higher
+ - At least python 3.10 or higher
+
+> For contributors: The `pytype` project does not yet support Python 3.11, so you must use 3.10 to run tests locally.
 
 ## dependencies
 
