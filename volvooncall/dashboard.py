@@ -97,7 +97,7 @@ class Sensor(Instrument):
 
     def configurate(self, scandinavian_miles=False, usa_units=False, **config):
         if self.unit and scandinavian_miles:
-            if "km" in self.unit:
+            if "km" == self.unit:
                 self.unit = "mil"
         elif self.unit and usa_units:
             if "km/h" in self.unit:
