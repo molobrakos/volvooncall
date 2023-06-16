@@ -9,6 +9,7 @@ Usage:
   voc [-v|-vv] [options] list
   voc [-v|-vv] [options] status
   voc [-v|-vv] [options] trips [(--pretty|--json|--csv)]
+  voc [-v|-vv] [options] export-trips <export-folder>
   voc [-v|-vv] [options] owntracks
   voc [-v|-vv] [options] print [<attribute>]
   voc [-v|-vv] [options] (lock | unlock)
@@ -150,7 +151,7 @@ async def main(args):
 
             return await mqtt.run(connection, config)
 
-        journal = args["trips"] or args["dashboard"] or args["mqtt"]
+        journal = args["trips"] or args["dashboard"] or args["mqtt"] or args['export-trips']
         res = await connection.update(journal=journal)
 
         if not res:
@@ -194,7 +195,10 @@ async def main(args):
                             trip["endPosition"]["city"],
                         )
                     )
-
+        elif args["export-trips"]:
+            export_folder = args['<export-folder>']
+            exported, skipped = await connection.export_trips(folder=export_folder)
+            print("Exported %i trips, %i trips already existed (use -v for more details)" % (exported, skipped))
         elif args["print"]:
             attr = args["<attribute>"]
             if attr:
